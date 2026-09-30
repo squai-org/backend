@@ -1,0 +1,42 @@
+{
+  "files": {
+    "includes": [
+      "**",
+      "!public",
+      "!dist",
+      "!coverage",
+      "!.wrangler",
+      "!node_modules",
+      "!package-lock.json",
+      "!src/**/templates/*.html"
+    ]
+  },
+  "formatter": {
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 100
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "single"
+    }
+  },
+  "linter": {
+    "rules": {
+      "preset": "recommended",
+      "suspicious": {
+        "noControlCharactersInRegex": "off"
+      },
+      "style": {
+        "noNonNullAssertion": "error"
+      }
+    }
+  },
+  "assist": {
+    "actions": {
+      "source": {
+        "organizeImports": "on"
+      }
+    }
+  }
+}

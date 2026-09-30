@@ -1,0 +1,4 @@
+SIGNING_KEY_ID="replace-with-generated-key-id"
+SIGNING_PRIVATE_KEY_JWK='replace-with-generated-private-jwk-json'
+VERIFICATION_KEYS_JWKS='replace-with-generated-public-jwks-json'
+CERTIFICATE_ISSUANCE_TOKEN="replace-with-generated-token"
