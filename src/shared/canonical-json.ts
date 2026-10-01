@@ -7,7 +7,7 @@ export function canonicalJson(value: unknown): string {
   if (typeof value === 'object' && Object.getPrototypeOf(value) === Object.prototype) {
     const object = value as Record<string, unknown>;
     return `{${Object.keys(object)
-      .sort()
+      .sort((left, right) => (left < right ? -1 : left > right ? 1 : 0))
       .map((key) => `${canonicalJson(key)}:${canonicalJson(object[key])}`)
       .join(',')}}`;
   }

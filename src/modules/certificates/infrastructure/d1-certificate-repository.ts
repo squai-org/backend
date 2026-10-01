@@ -17,8 +17,7 @@ function toRecord(row: CertificateRow): CertificateRecord {
   let payload: CertificatePayload;
   try {
     payload = JSON.parse(row.payload_json) as CertificatePayload;
-    if (!payload || row.template_id !== payload.templateId)
-      throw new Error('Template metadata mismatch');
+    if (row.template_id !== payload?.templateId) throw new Error('Template metadata mismatch');
   } catch {
     throw new ApplicationError('CERTIFICATE_INTEGRITY_FAILED');
   }
