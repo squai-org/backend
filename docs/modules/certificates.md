@@ -31,7 +31,7 @@ En producción, emite en `https://api.squai.io/api/v1/certificates`, con `Author
 
 El cuerpo admite hasta 8 KiB, nombre hasta 80 puntos de código y curso hasta 100. El texto debe estar recortado y normalizado en NFC, sin controles ni caracteres de dirección prohibidos. La fecha debe ser real y tener formato `YYYY-MM-DD`. Propiedades y plantillas desconocidas se rechazan.
 
-La respuesta mantiene `hash`, `verificationUrl`, `templateId`, `signature`, `keyId`, `credential` y `credentialJwt`. El enlace canónico es `https://www.verify.squai.io/verify/<hash>`; `verify.squai.io` también sirve la verificación. Las lecturas públicas siguen disponibles en ambos hosts de verificación y en el host API. La emisión fuera del host API devuelve 404 en producción.
+La respuesta mantiene `hash`, `verificationUrl`, `templateId`, `signature`, `keyId`, `credential` y `credentialJwt`. El enlace canónico es `https://www.verify.squai.io/verify/<hash>`. Todos los endpoints de backend, incluidos `/health`, metadatos, VC-JWT, PDF y JWKS, se atienden únicamente en `https://api.squai.io`. En el frontend devuelven 404. `/verify/:hash` y los recursos de visualización pertenecen a `www.verify.squai.io`; una visita a esa ruta en la API redirige al frontend. No se registra `verify.squai.io` en los nuevos despliegues.
 
 | Estado | Caso |
 | --- | --- |
@@ -66,7 +66,7 @@ npm run keys:generate
 
 Copia los valores generados a `.dev.vars`, conservando el JSON entre comillas simples como en el ejemplo. Este comando muestra secretos: ejecútalo en un terminal de confianza, fuera de logs de CI. Nunca publiques el token en un frontend. Sin `API_ORIGIN`, el entorno local conserva emisión y consulta en un mismo origen.
 
-Para rotar claves, conserva las públicas históricas en JWKS, añade un `kid` nuevo y reemplaza ID activo y clave privada. Conserva identidad del emisor y `PUBLIC_ORIGIN`: forman parte del perfil firmado; cambiarlos requiere una estrategia de migración.
+Para rotar claves, conserva las públicas históricas en JWKS, añade un `kid` nuevo y reemplaza ID activo y clave privada. Conserva identidad del emisor y `PUBLIC_ORIGIN`: forman parte del perfil firmado. Los nuevos `kid` usan `API_ORIGIN`; los históricos siguen admitiéndose y aparecen como alias en JWKS. La ruta antigua de JWKS en el frontend sólo redirige con 308 a la API para mantener descubrimiento externo. CORS permite lecturas desde `PUBLIC_ORIGIN`, sin credenciales ni acceso desde otros orígenes.
 
 ## Integridad y exposición de datos
 
@@ -82,9 +82,9 @@ El PDF no tiene formularios ni JavaScript, pero tampoco firma Adobe/PAdES. Un ar
 
 ## PDF y plantillas
 
-Cada PDF contiene una página Letter horizontal de 792 × 612 puntos, fondo completo, información, fuentes embebidas y enlace de verificación. El contenedor se adapta al ancho disponible. Apertura y descarga funcionan como alternativa cuando el navegador no admite PDF embebido.
+Cada PDF contiene una página Letter horizontal de 792 × 612 puntos, fondo completo, información, fuentes embebidas y enlace de verificación. PDF.js muestra la página completa en un canvas ajustado al ancho y alto disponibles, sin iframe, barras del lector nativo ni scroll propio. El PDF se obtiene desde el host API. Apertura y descarga se mantienen como alternativas ante JavaScript deshabilitado o fallos de renderizado; la descarga permite acceso al texto del PDF con tecnologías de asistencia.
 
-No se utiliza Cloudflare Browser Run ni una API de renderizado de pago. `pdf-lib`, `@pdf-lib/fontkit` y Playwright son dependencias de desarrollo: preparan los fondos y manifiestos fuera del Worker. En la solicitud, el Worker añade texto y enlace mediante una actualización incremental del PDF. JOSE es la dependencia específica de runtime; hashing y Ed25519 usan Web Crypto.
+No se utiliza Cloudflare Browser Run ni una API de renderizado de pago. `pdf-lib`, `@pdf-lib/fontkit` y Playwright son dependencias de desarrollo: preparan los fondos y manifiestos fuera del Worker. En la solicitud, el Worker añade texto y enlace mediante una actualización incremental del PDF. JOSE es la dependencia específica de runtime; hashing y Ed25519 usan Web Crypto. PDF.js 6.3.289, verificado contra npm latest el 2026-10-01, se empaqueta como recursos estáticos para el navegador; no renderiza PDF dentro del Worker ni utiliza CDN. La licencia se incluye en esos recursos.
 
 Para regenerar intencionalmente los archivos preparados:
 
@@ -99,13 +99,13 @@ Las fuentes actuales cubren su repertorio latino, incluidos acentos españoles. 
 
 ## Métricas y generación masiva
 
-Referencia de validación del **2026-10-01**, commit `c6ce88b`: [CI](https://github.com/squai-org/backend/actions/runs/36920636224).
+Validación local del **2026-10-01** para la separación de dominios y el visor PDF.js. Las métricas son de desarrollo; CPU de producción sigue pendiente.
 
 | Métrica | Resultado / alcance |
 | --- | --- |
-| Pruebas | 80 unitarias e integración aprobadas |
-| Cobertura de líneas | 98,78% en la ejecución de referencia |
-| Worker | Aproximadamente 99 KiB sin comprimir; 30 KiB gzip en dry run |
+| Pruebas | 88 unitarias e integración aprobadas, más renderizado en navegador |
+| Cobertura de líneas | 97,96% en la ejecución local; detalle en `coverage/lcov.info` |
+| Worker | Aproximadamente 103 KiB sin comprimir; 31 KiB gzip en dry run |
 | Fondos PDF preparados | Aproximadamente 1,37–1,40 MB cada uno, antes del texto variable |
 | CPU del endpoint en Cloudflare | Pendiente de medir en producción; las pruebas locales no certifican el presupuesto Free |
 
@@ -117,7 +117,7 @@ La emisión no genera el PDF: se genera al pedir su endpoint, después de verifi
 | --- | --- |
 | Emitir | 1 |
 | Obtener PDF directamente | 1 adicional |
-| Abrir visor y cargar PDF | 2 adicionales |
+| Abrir visor y cargar PDF | Al menos 4: HTML, script, worker de PDF.js y PDF |
 | Descargar después | 1 adicional; vuelve a generar PDF |
 
 Por ejemplo, 10.000 emisiones más una petición directa del PDF por certificado suman **20.000 solicitudes**, sin reintentos ni otro tráfico. El navegador puede añadir peticiones. Las respuestas `no-store` no amortizan visitas posteriores mediante caché.
@@ -127,3 +127,12 @@ Una emisión nueva normalmente ejecuta un SELECT previo y un batch INSERT + SELE
 Las ráfagas comparten memoria, capacidad D1 y cuotas con otros módulos. No calcules concurrencia como 128 MB divididos por tamaño del PDF: hay buffers, copias y runtime. Usa el margen y supervisión de la [guía Cloudflare](../platform/cloudflare.md), y reduce o detén el lote cuando haya sobrecarga o agotamiento.
 
 Referencias: [VC 2.0](https://www.w3.org/TR/vc-data-model-2.0/), [VC-JOSE-COSE](https://www.w3.org/TR/vc-jose-cose/), [Web Crypto en Workers](https://developers.cloudflare.com/workers/runtime-apis/web-crypto/).
+
+## Pruebas de presentación
+
+```sh
+npx playwright install chromium
+npm run test:browser
+```
+
+CI instala Chromium y ejecuta ambos diseños en 320×568, 390×844, 768×1024, 1366×768, 1920×1080 y 844×390. Comprueba página completa visible, proporción Letter, ausencia de scroll y controles nativos, descarga y errores JavaScript. Son viewports emulados en Chromium, no dispositivos físicos ni cobertura de todos los navegadores. Las capturas se guardan en `test-results/`.

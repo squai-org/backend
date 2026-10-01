@@ -121,3 +121,31 @@ describe('Web Crypto adapter', () => {
     ).toThrow();
   });
 });
+
+it('uses API key URLs for new credentials and preserves historical signed key IDs', async () => {
+  const keys = await createKeys();
+  const apiOrigin = 'https://api.squai.io';
+  const current = new WebCryptoCredentials(
+    keys.kid,
+    keys.privateJwk,
+    keys.jwks,
+    publicOrigin,
+    apiOrigin,
+  );
+  const credential = createCredential(
+    {
+      hash: '0'.repeat(64),
+      payload: { version: 1, issuer, ...input },
+      issuedAt: '2026-10-01T12:00:00Z',
+    },
+    `${publicOrigin}/verify/${'0'.repeat(64)}`,
+  );
+  const historical = await keys.cryptography.signCredential(credential);
+  expect(await current.verifyCredential(historical, keys.kid)).toEqual(credential);
+  const jwt = await current.signCredential(credential);
+  expect(await current.verifyCredential(jwt, keys.kid)).toEqual(credential);
+  expect(current.jwks.keys.map((key) => key.kid)).toEqual([
+    `${apiOrigin}/.well-known/jwks.json#${keys.kid}`,
+    `${publicOrigin}/.well-known/jwks.json#${keys.kid}`,
+  ]);
+});

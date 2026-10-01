@@ -50,7 +50,9 @@ certificateRoutes.get('/verify/:hash', async (context) => {
   const certificate = await certificatesModule(context.env).verify.execute(
     context.req.param('hash'),
   );
-  return context.html(renderPdfViewer(certificate));
+  return context.html(
+    renderPdfViewer(certificate, context.env.API_ORIGIN ?? new URL(context.req.url).origin),
+  );
 });
 
 certificateRoutes.get('/api/v1/certificates/:hash/pdf', async (context) => {

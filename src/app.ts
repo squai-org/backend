@@ -1,8 +1,10 @@
 import { Hono } from 'hono';
+import { cors } from 'hono/cors';
 import { HTTPException } from 'hono/http-exception';
 import { certificateRoutes } from './modules/certificates/presentation/routes';
 import type { HttpEnvironment } from './platform/bindings';
 import { errorStatus } from './platform/error-status';
+import { originPolicy } from './platform/origin-policy';
 import { ApplicationError } from './shared/errors';
 
 export const app = new Hono<HttpEnvironment>();
@@ -13,22 +15,35 @@ app.use('*', async (context, next) => {
   await next();
   context.header('X-Request-Id', requestId);
   context.header('X-Content-Type-Options', 'nosniff');
-  const isPdf = context.res.headers.get('Content-Type') === 'application/pdf';
-  context.header('X-Frame-Options', isPdf ? 'SAMEORIGIN' : 'DENY');
+  const isViewer = context.req.path.startsWith('/verify/') && context.res.status === 200;
+  const apiOrigin = context.env.API_ORIGIN ?? new URL(context.req.url).origin;
+  context.header('X-Frame-Options', 'DENY');
   context.header('Referrer-Policy', 'no-referrer');
   context.header('X-Robots-Tag', 'noindex, nofollow, noarchive');
   context.header('Cache-Control', 'no-store');
   context.header('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
   context.header(
     'Content-Security-Policy',
-    isPdf
-      ? "default-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'"
-      : "default-src 'none'; img-src 'self'; frame-src 'self'; style-src 'self' 'unsafe-inline'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
+    isViewer
+      ? `default-src 'none'; script-src 'self'; worker-src 'self'; connect-src 'self' ${apiOrigin}; img-src 'self' blob: data:; font-src 'self' blob:; style-src 'self' 'unsafe-inline'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'`
+      : "default-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
   );
 });
 
+app.use('*', originPolicy);
+app.use(
+  '*',
+  cors({
+    origin: (origin, context) => (origin === context.env.PUBLIC_ORIGIN ? origin : undefined),
+    allowMethods: ['GET', 'HEAD'],
+    allowHeaders: ['Content-Type', 'Range'],
+    exposeHeaders: ['Content-Disposition'],
+  }),
+);
+
 app.get('/health', (context) => context.json({ status: 'ok' }));
 app.get('/certificate-assets/*', (context) => context.env.ASSETS.fetch(context.req.raw));
+app.get('/certificate-viewer/*', (context) => context.env.ASSETS.fetch(context.req.raw));
 app.route('/', certificateRoutes);
 app.notFound((context) =>
   context.json({ error: { code: 'NOT_FOUND', requestId: context.get('requestId') } }, 404),

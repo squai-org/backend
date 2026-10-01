@@ -13,12 +13,12 @@ export default defineConfig({
     },
   ],
   test: {
-    include: ['tests/**/*.test.ts'],
+    include: ['tests/**/*.test.{ts,mjs}'],
     testTimeout: 30000,
     hookTimeout: 30000,
     coverage: {
       provider: 'v8',
-      include: ['src/**/*.ts'],
+      include: ['src/**/*.{ts,mjs}'],
       exclude: ['src/**/*.d.ts', 'src/index.ts'],
       reporter: ['text', 'lcov'],
       thresholds: { statements: 85, branches: 80, functions: 85, lines: 85 },

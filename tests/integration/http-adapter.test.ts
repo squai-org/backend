@@ -184,3 +184,52 @@ test.each([
     log.mockRestore();
   }
 });
+
+test('enforces canonical host routing before running a business handler', async () => {
+  const api = 'https://api.squai.io';
+  const frontend = bindings.PUBLIC_ORIGIN;
+  const productionBindings = { ...bindings, API_ORIGIN: api };
+  expect((await app.request(`${api}/health`, undefined, productionBindings)).status).toBe(200);
+  expect((await app.request(`${frontend}/health`, undefined, productionBindings)).status).toBe(404);
+  expect(
+    (await app.request('https://unknown.example/health', undefined, productionBindings)).status,
+  ).toBe(404);
+  const oldKeys = await app.request(
+    `${frontend}/.well-known/jwks.json`,
+    undefined,
+    productionBindings,
+  );
+  expect(oldKeys.status).toBe(308);
+  expect(oldKeys.headers.get('Location')).toBe(`${api}/.well-known/jwks.json`);
+  const misplaced = await app.request(
+    `${api}/verify/${'0'.repeat(64)}`,
+    undefined,
+    productionBindings,
+  );
+  expect(misplaced.status).toBe(308);
+  expect(misplaced.headers.get('Location')).toBe(`${frontend}/verify/${'0'.repeat(64)}`);
+  const missing = await app.request(
+    `${frontend}/verify/${'0'.repeat(64)}`,
+    undefined,
+    productionBindings,
+  );
+  expect(missing.status).toBe(404);
+  const keys = await app.request(
+    `${api}/.well-known/jwks.json`,
+    { headers: { Origin: frontend } },
+    productionBindings,
+  );
+  expect(keys.headers.get('Access-Control-Allow-Origin')).toBe(frontend);
+  const untrusted = await app.request(
+    `${api}/health`,
+    { headers: { Origin: 'https://unknown.example' } },
+    productionBindings,
+  );
+  expect(untrusted.headers.get('Access-Control-Allow-Origin')).toBeNull();
+  const script = await app.request(
+    `${frontend}/certificate-viewer/viewer.js`,
+    undefined,
+    productionBindings,
+  );
+  expect(script.status).toBe(200);
+});

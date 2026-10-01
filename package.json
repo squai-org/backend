@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "wrangler dev",
     "lint": "biome check . && node scripts/check-architecture.mjs",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.browser.json",
     "build": "node scripts/build.mjs",
     "test": "npm run build && vitest run",
     "test:unit": "vitest run tests/unit",
@@ -18,7 +18,8 @@
     "db:migrate:local": "wrangler d1 migrations apply certificates --local",
     "keys:generate": "node scripts/generate-keys.mjs",
     "templates:pdf": "node scripts/export-pdf-templates.mjs",
-    "test:coverage": "npm run build && vitest run --coverage"
+    "test:coverage": "npm run build && vitest run --coverage",
+    "test:browser": "npm run build && vitest run --config vitest.browser.config.ts"
   },
   "dependencies": {
     "hono": "4.13.12",
@@ -34,6 +35,7 @@
     "esbuild": "0.28.2",
     "miniflare": "5.20260930.0-alpha",
     "pdf-lib": "1.17.1",
+    "pdfjs-dist": "6.3.289",
     "playwright": "1.63.0",
     "typescript": "7.0.2",
     "vitest": "5.0.3",

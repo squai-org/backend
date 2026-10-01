@@ -33,6 +33,10 @@ jobs:
       - run: npm run typecheck
       - name: Unit and integration tests with coverage
         run: npm run test:coverage
+      - name: Install browser for responsive PDF tests
+        run: npx playwright install --with-deps chromium
+      - name: Responsive certificate browser tests
+        run: npm run test:browser
       - run: npm run build
       - name: Validate Wrangler bundle
         run: npx wrangler deploy --dry-run
@@ -42,6 +46,7 @@ jobs:
           path: |
             coverage/
             dist/
+            test-results/
           retention-days: 7
       - name: Require Sonar configuration
         env:

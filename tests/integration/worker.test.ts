@@ -61,22 +61,22 @@ describe('Workers HTTP and D1 integration', () => {
       expect(html).not.toContain(input.data.courseName);
       expect(html).not.toContain('/certificate-assets/');
       expect(html).toContain('Descargar PDF');
-      expect(html).toContain(`<iframe class="viewer"`);
+      expect(html).toContain(`<canvas id="certificate"`);
       expect(html).toContain(`/api/v1/certificates/${result.body.hash}/pdf`);
-      expect(response.headers.get('Content-Security-Policy')).toContain("frame-src 'self'");
+      expect(response.headers.get('Content-Security-Policy')).toContain("script-src 'self'");
       expect(response.headers.get('X-Frame-Options')).toBe('DENY');
-      expect(html).not.toMatch(/<script|<input|<form|\{\{/i);
+      expect(html).not.toMatch(/<iframe|<input|<form|\{\{/i);
       const paths = [...html.matchAll(/src="([^"]+)"/g)].map((match) => match[1]);
-      expect(paths).toHaveLength(1);
+      expect(paths).toEqual(['/certificate-viewer/viewer.js']);
       const pdfResponse = await runtime.dispatchFetch(
         `${publicOrigin}/api/v1/certificates/${result.body.hash}/pdf`,
       );
       expect(pdfResponse.status).toBe(200);
       expect(pdfResponse.headers.get('Content-Type')).toBe('application/pdf');
       expect(pdfResponse.headers.get('Content-Disposition')).toContain('inline;');
-      expect(pdfResponse.headers.get('X-Frame-Options')).toBe('SAMEORIGIN');
+      expect(pdfResponse.headers.get('X-Frame-Options')).toBe('DENY');
       expect(pdfResponse.headers.get('Content-Security-Policy')).toContain(
-        "frame-ancestors 'self'",
+        "frame-ancestors 'none'",
       );
       expect(pdfResponse.headers.get('Cache-Control')).toBe('no-store');
       const pdf = await PDFDocument.load(await pdfResponse.arrayBuffer());

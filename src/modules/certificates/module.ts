@@ -21,6 +21,7 @@ function composeModule(bindings: Bindings) {
     bindings.SIGNING_PRIVATE_KEY_JWK,
     bindings.VERIFICATION_KEYS_JWKS,
     publicOrigin,
+    bindings.API_ORIGIN ? httpsOrigin(bindings.API_ORIGIN) : publicOrigin,
   );
   const verify = new VerifyCertificate(repository, cryptography, publicOrigin, issuer);
   const issue = new IssueCertificate(
