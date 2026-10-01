@@ -1,3 +1,9 @@
+function compareUtf16(left: string, right: string): number {
+  if (left < right) return -1;
+  if (left > right) return 1;
+  return 0;
+}
+
 export function canonicalJson(value: unknown): string {
   if (typeof value === 'string' && !value.isWellFormed()) throw new TypeError('Invalid Unicode');
   if (value === null || typeof value === 'boolean' || typeof value === 'string')
@@ -7,7 +13,7 @@ export function canonicalJson(value: unknown): string {
   if (typeof value === 'object' && Object.getPrototypeOf(value) === Object.prototype) {
     const object = value as Record<string, unknown>;
     return `{${Object.keys(object)
-      .sort((left, right) => (left < right ? -1 : left > right ? 1 : 0))
+      .sort(compareUtf16)
       .map((key) => `${canonicalJson(key)}:${canonicalJson(object[key])}`)
       .join(',')}}`;
   }
