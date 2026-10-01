@@ -1,0 +1,114 @@
+name: Backend
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backend-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  validation:
+    name: Tests, lint and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24.19.0
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - name: Unit and integration tests with coverage
+        run: npm run test:coverage
+      - run: npm run build
+      - name: Validate Wrangler bundle
+        run: npx wrangler deploy --dry-run
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: validation-${{ github.sha }}
+          path: |
+            coverage/
+            dist/
+          retention-days: 7
+      - name: Require Sonar configuration
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_PROJECT_KEY: ${{ vars.SONAR_PROJECT_KEY }}
+          SONAR_ORGANIZATION: ${{ vars.SONAR_ORGANIZATION }}
+        run: |
+          test -n "$SONAR_TOKEN" || { echo "Configure SONAR_TOKEN before integration."; exit 1; }
+          test -n "$SONAR_PROJECT_KEY" || { echo "Configure SONAR_PROJECT_KEY before integration."; exit 1; }
+          test -n "$SONAR_ORGANIZATION" || { echo "Configure SONAR_ORGANIZATION before integration."; exit 1; }
+      - name: Sonar analysis and quality gate
+        uses: SonarSource/sonarqube-scan-action@d209202bc7d53ff1cc128f7f907dac145c9d6ae9
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >-
+            -Dsonar.projectKey=${{ vars.SONAR_PROJECT_KEY }}
+            -Dsonar.organization=${{ vars.SONAR_ORGANIZATION }}
+            -Dsonar.host.url=https://sonarcloud.io
+            -Dsonar.qualitygate.wait=true
+            -Dsonar.qualitygate.timeout=300
+
+  integration-gate:
+    name: Integration gate
+    if: always()
+    needs: validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    steps:
+      - env:
+          VALIDATION_RESULT: ${{ needs.validation.result }}
+        run: test "$VALIDATION_RESULT" = "success"
+
+  deploy:
+    name: Deploy production
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    needs: integration-gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: production
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24.19.0
+          cache: npm
+      - run: npm ci
+      - name: Prepare deployment
+        run: node scripts/prepare-deployment.mjs
+        env:
+          CLOUDFLARE_D1_DATABASE_ID: ${{ vars.CLOUDFLARE_D1_DATABASE_ID }}
+          SIGNING_KEY_ID: ${{ vars.SIGNING_KEY_ID }}
+          VERIFICATION_KEYS_JWKS: ${{ vars.VERIFICATION_KEYS_JWKS }}
+          SIGNING_PRIVATE_KEY_JWK: ${{ secrets.SIGNING_PRIVATE_KEY_JWK }}
+          CERTIFICATE_ISSUANCE_TOKEN: ${{ secrets.CERTIFICATE_ISSUANCE_TOKEN }}
+      - name: Apply additive D1 migrations and deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          test -n "$CLOUDFLARE_API_TOKEN" && test -n "$CLOUDFLARE_ACCOUNT_ID"
+          npx wrangler d1 migrations apply squai-certificates --remote --config wrangler.deploy.json
+          npx wrangler deploy --config wrangler.deploy.json --secrets-file .deployment-secrets.json
+      - name: Smoke test
+        run: node scripts/smoke-test.mjs
+      - name: Remove deployment files
+        if: always()
+        run: rm -f .deployment-secrets.json wrangler.deploy.json

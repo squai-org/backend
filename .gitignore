@@ -1,0 +1,11 @@
+node_modules/
+dist/
+coverage/
+.wrangler/
+.dev.vars*
+.env*
+!.dev.vars.example
+test-results/
+playwright-report/
+wrangler.deploy.json
+.deployment-secrets.json

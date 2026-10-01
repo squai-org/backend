@@ -1,0 +1,38 @@
+{
+  "name": "@squai/backend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24.19.0"
+  },
+  "scripts": {
+    "dev": "wrangler dev",
+    "lint": "biome check . && node scripts/check-architecture.mjs",
+    "typecheck": "tsc --noEmit",
+    "build": "node scripts/build.mjs",
+    "test": "npm run build && vitest run",
+    "test:unit": "vitest run tests/unit",
+    "test:integration": "npm run build && vitest run tests/integration",
+    "check": "npm run lint && npm run typecheck && npm run test:coverage && npm run build",
+    "db:migrate:local": "wrangler d1 migrations apply certificates --local",
+    "keys:generate": "node scripts/generate-keys.mjs",
+    "test:coverage": "npm run build && vitest run --coverage"
+  },
+  "dependencies": {
+    "hono": "4.13.12",
+    "jose": "6.2.12"
+  },
+  "devDependencies": {
+    "@babel/parser": "7.29.9",
+    "@biomejs/biome": "2.5.15",
+    "@cloudflare/workers-types": "5.20260930.2",
+    "@types/node": "26.6.3",
+    "@vitest/coverage-v8": "5.0.3",
+    "esbuild": "0.28.2",
+    "miniflare": "5.20260930.0-alpha",
+    "typescript": "7.0.2",
+    "vitest": "5.0.3",
+    "wrangler": "4.145.0"
+  }
+}
