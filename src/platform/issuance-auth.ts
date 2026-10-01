@@ -3,6 +3,11 @@ import { ApplicationError } from '../shared/errors';
 import type { HttpEnvironment } from './bindings';
 
 export const issuanceAuth: MiddlewareHandler<HttpEnvironment> = async (context, next) => {
+  if (
+    context.env.API_ORIGIN &&
+    new URL(context.req.url).origin !== new URL(context.env.API_ORIGIN).origin
+  )
+    return context.notFound();
   const expected = context.env.CERTIFICATE_ISSUANCE_TOKEN;
   if (!expected || expected.length < 32) throw new ApplicationError('ISSUANCE_UNAVAILABLE');
   const header = context.req.header('Authorization') ?? '';

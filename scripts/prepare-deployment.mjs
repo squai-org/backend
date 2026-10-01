@@ -53,7 +53,11 @@ config.d1_databases[0].database_id = databaseId;
 config.d1_databases[0].database_name = 'squai-certificates';
 config.vars.SIGNING_KEY_ID = process.env.SIGNING_KEY_ID;
 config.vars.VERIFICATION_KEYS_JWKS = process.env.VERIFICATION_KEYS_JWKS;
-config.routes = [{ pattern: 'www.verify.squai.io', custom_domain: true }];
+config.vars.API_ORIGIN = 'https://api.squai.io';
+config.routes = ['api.squai.io', 'www.verify.squai.io', 'verify.squai.io'].map((pattern) => ({
+  pattern,
+  custom_domain: true,
+}));
 config.workers_dev = false;
 config.preview_urls = false;
 await writeFile('wrangler.deploy.json', JSON.stringify(config, null, 2));

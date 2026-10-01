@@ -2,6 +2,7 @@ export interface Bindings {
   DB: D1Database;
   ASSETS: Fetcher;
   PUBLIC_ORIGIN: string;
+  API_ORIGIN?: string;
   ISSUER_ID: string;
   ISSUER_NAME: string;
   SIGNING_KEY_ID: string;

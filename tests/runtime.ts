@@ -6,7 +6,7 @@ import { createKeys, issuer, publicOrigin } from './fixtures';
 export const token = 'integration-test-issuance-token-32-characters';
 export const schema = await readFile('migrations/0001_certificates.sql', 'utf8');
 
-export async function createTestRuntime() {
+export async function createTestRuntime(apiOrigin?: string) {
   const keys = await createKeys();
   const values = {
     PUBLIC_ORIGIN: publicOrigin,
@@ -16,6 +16,7 @@ export async function createTestRuntime() {
     SIGNING_PRIVATE_KEY_JWK: keys.privateJwk,
     VERIFICATION_KEYS_JWKS: keys.jwks,
     CERTIFICATE_ISSUANCE_TOKEN: token,
+    ...(apiOrigin ? { API_ORIGIN: apiOrigin } : {}),
   };
   const runtime = new Miniflare({
     workers: [

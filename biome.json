@@ -8,7 +8,8 @@
       "!.wrangler",
       "!node_modules",
       "!package-lock.json",
-      "!src/**/templates/*.html"
+      "!src/**/templates/*.html",
+      "!src/**/templates/pdf-manifest.json"
     ]
   },
   "formatter": {

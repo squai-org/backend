@@ -4,7 +4,8 @@ import type { HttpEnvironment } from '../../../platform/bindings';
 import { issuanceAuth } from '../../../platform/issuance-auth';
 import { ApplicationError } from '../../../shared/errors';
 import { certificatesModule } from '../module';
-import { renderCertificate } from './render-certificate';
+import { renderCertificatePdf } from './render-certificate-pdf';
+import { renderPdfViewer } from './render-pdf-viewer';
 
 export const certificateRoutes = new Hono<HttpEnvironment>();
 
@@ -49,7 +50,23 @@ certificateRoutes.get('/verify/:hash', async (context) => {
   const certificate = await certificatesModule(context.env).verify.execute(
     context.req.param('hash'),
   );
-  return context.html(renderCertificate(certificate));
+  return context.html(renderPdfViewer(certificate));
+});
+
+certificateRoutes.get('/api/v1/certificates/:hash/pdf', async (context) => {
+  const certificate = await certificatesModule(context.env).verify.execute(
+    context.req.param('hash'),
+  );
+  const pdf = await renderCertificatePdf(certificate, async (path) => {
+    const response = await context.env.ASSETS.fetch(new URL(path, context.req.url));
+    if (!response.ok) throw new Error('Certificate PDF asset unavailable');
+    return response.arrayBuffer();
+  });
+  const disposition = context.req.query('download') === '1' ? 'attachment' : 'inline';
+  return context.body(new Uint8Array(pdf), 200, {
+    'Content-Type': 'application/pdf',
+    'Content-Disposition': `${disposition}; filename="squai-${certificate.record.hash}.pdf"`,
+  });
 });
 
 certificateRoutes.get('/api/v1/certificates/:hash', async (context) => {
