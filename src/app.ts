@@ -16,7 +16,7 @@ app.use('*', async (context, next) => {
   context.header('X-Request-Id', requestId);
   context.header('X-Content-Type-Options', 'nosniff');
   const isViewer = context.req.path.startsWith('/verify/') && context.res.status === 200;
-  const apiOrigin = context.env.API_ORIGIN ?? new URL(context.req.url).origin;
+  const apiOrigin = context.env.API_ORIGIN ?? '';
   context.header('X-Frame-Options', 'DENY');
   context.header('Referrer-Policy', 'no-referrer');
   context.header('X-Robots-Tag', 'noindex, nofollow, noarchive');

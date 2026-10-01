@@ -78,4 +78,4 @@ function showError() {
   container.setAttribute('aria-busy', 'false');
 }
 
-loadDocument();
+await loadDocument();
