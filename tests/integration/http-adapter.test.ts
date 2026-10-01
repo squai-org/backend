@@ -1,3 +1,4 @@
+import { PDFDocument } from 'pdf-lib';
 import { afterAll, beforeAll, expect, test, vi } from 'vitest';
 import { app } from '../../src/app';
 import type { Bindings } from '../../src/platform/bindings';
@@ -67,6 +68,19 @@ test.each(['program-v1', 'talk-v1'])(
       bindings,
     );
     expect(asset.status).toBe(200);
+    const pdf = await app.request(
+      `/api/v1/certificates/${certificate.hash}/pdf`,
+      undefined,
+      bindings,
+    );
+    expect(pdf.status).toBe(200);
+    expect((await PDFDocument.load(await pdf.arrayBuffer())).getPageCount()).toBe(1);
+    const download = await app.request(
+      `/api/v1/certificates/${certificate.hash}/pdf?download=1`,
+      undefined,
+      bindings,
+    );
+    expect(download.headers.get('Content-Disposition')).toContain('attachment;');
   },
 );
 
@@ -114,7 +128,7 @@ test('HTTP errors reject invalid authentication, transport, size and JSON safely
   expect((await app.request('/.well-known/jwks.json', undefined, bindings)).status).toBe(200);
 });
 
-test('rendered text escapes HTML and preserves signed values', async () => {
+test('PDF viewer contains no recipient HTML and preserves signed values in the API', async () => {
   const recipientName = '<script>a&"b\'c</script>';
   const payload = {
     ...input,
@@ -127,8 +141,26 @@ test('rendered text escapes HTML and preserves signed values', async () => {
   );
   const { hash } = (await response.json()) as { hash: string };
   const html = await (await app.request(`/verify/${hash}`, undefined, bindings)).text();
-  expect(html).toContain('&lt;script&gt;a&amp;&quot;b&#39;c&lt;/script&gt;');
+  expect(html).not.toContain('&lt;script&gt;a&amp;&quot;b&#39;c&lt;/script&gt;');
   expect(html).not.toContain('<script>');
+  const json = await (
+    await app.request(`/api/v1/certificates/${hash}`, undefined, bindings)
+  ).json();
+  expect(json).toMatchObject({ credential: { credentialSubject: { recipientName } } });
+});
+
+test('API origin enforcement preserves authentication and blocks issuance on the verification host', async () => {
+  const env = { ...bindings, API_ORIGIN: 'https://api.squai.io' };
+  const options = { method: 'POST', headers, body: JSON.stringify(input) };
+  expect(
+    (await app.request('https://www.verify.squai.io/api/v1/certificates', options, env)).status,
+  ).toBe(404);
+  expect((await app.request('https://api.squai.io/api/v1/certificates', options, env)).status).toBe(
+    201,
+  );
+  expect(
+    (await app.request('https://api.squai.io/api/v1/certificates', { method: 'POST' }, env)).status,
+  ).toBe(401);
 });
 
 test.each([

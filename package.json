@@ -17,6 +17,7 @@
     "check": "npm run lint && npm run typecheck && npm run test:coverage && npm run build",
     "db:migrate:local": "wrangler d1 migrations apply certificates --local",
     "keys:generate": "node scripts/generate-keys.mjs",
+    "templates:pdf": "node scripts/export-pdf-templates.mjs",
     "test:coverage": "npm run build && vitest run --coverage"
   },
   "dependencies": {
@@ -27,10 +28,13 @@
     "@babel/parser": "7.29.9",
     "@biomejs/biome": "2.5.15",
     "@cloudflare/workers-types": "5.20260930.2",
+    "@pdf-lib/fontkit": "1.1.1",
     "@types/node": "26.6.3",
     "@vitest/coverage-v8": "5.0.3",
     "esbuild": "0.28.2",
     "miniflare": "5.20260930.0-alpha",
+    "pdf-lib": "1.17.1",
+    "playwright": "1.63.0",
     "typescript": "7.0.2",
     "vitest": "5.0.3",
     "wrangler": "4.145.0"

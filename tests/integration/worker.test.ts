@@ -1,5 +1,6 @@
 import { compactVerify, importJWK } from 'jose';
 import type { Miniflare } from 'miniflare';
+import { PDFDocument } from 'pdf-lib';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { input, issuer, publicOrigin } from '../fixtures';
 
@@ -46,7 +47,7 @@ describe('Workers HTTP and D1 integration', () => {
   });
 
   it.each(['program-v1', 'talk-v1'])(
-    'issues and renders the %s template with its original assets',
+    'issues and displays a downloadable Letter PDF for %s',
     async (templateId) => {
       const result = await issue(templateId);
       expect(result.response.status).toBe(201);
@@ -56,19 +57,39 @@ describe('Workers HTTP and D1 integration', () => {
       expect(response.status).toBe(200);
       expect(response.headers.get('Content-Type')).toContain('text/html');
       const html = await response.text();
-      expect(html).toContain(input.data.recipientName);
-      expect(html).toContain(`/certificate-assets/${templateId}/`);
-      expect(html).toContain(
-        templateId === 'program-v1' ? 'Certificado de aprobación' : 'Certificado de asistencia',
-      );
-      expect(html).toContain(
-        templateId === 'program-v1' ? 'completó el programa' : 'asistió a la charla',
-      );
+      expect(html).not.toContain(input.data.recipientName);
+      expect(html).not.toContain(input.data.courseName);
+      expect(html).not.toContain('/certificate-assets/');
+      expect(html).toContain('Descargar PDF');
+      expect(html).toContain(`<iframe class="viewer"`);
+      expect(html).toContain(`/api/v1/certificates/${result.body.hash}/pdf`);
+      expect(response.headers.get('Content-Security-Policy')).toContain("frame-src 'self'");
+      expect(response.headers.get('X-Frame-Options')).toBe('DENY');
       expect(html).not.toMatch(/<script|<input|<form|\{\{/i);
       const paths = [...html.matchAll(/src="([^"]+)"/g)].map((match) => match[1]);
-      for (const path of paths) {
-        expect((await runtime.dispatchFetch(`${publicOrigin}${path}`)).status).toBe(200);
-      }
+      expect(paths).toHaveLength(1);
+      const pdfResponse = await runtime.dispatchFetch(
+        `${publicOrigin}/api/v1/certificates/${result.body.hash}/pdf`,
+      );
+      expect(pdfResponse.status).toBe(200);
+      expect(pdfResponse.headers.get('Content-Type')).toBe('application/pdf');
+      expect(pdfResponse.headers.get('Content-Disposition')).toContain('inline;');
+      expect(pdfResponse.headers.get('X-Frame-Options')).toBe('SAMEORIGIN');
+      expect(pdfResponse.headers.get('Content-Security-Policy')).toContain(
+        "frame-ancestors 'self'",
+      );
+      expect(pdfResponse.headers.get('Cache-Control')).toBe('no-store');
+      const pdf = await PDFDocument.load(await pdfResponse.arrayBuffer());
+      expect(pdf.getPageCount()).toBe(1);
+      expect(pdf.getPages()[0]?.getSize()).toEqual({ width: 792, height: 612 });
+      expect(pdf.getForm().getFields()).toHaveLength(0);
+      const download = await runtime.dispatchFetch(
+        `${publicOrigin}/api/v1/certificates/${result.body.hash}/pdf?download=1`,
+      );
+      expect(download.status).toBe(200);
+      expect(download.headers.get('Content-Disposition')).toBe(
+        `attachment; filename="squai-${result.body.hash}.pdf"`,
+      );
     },
   );
 
@@ -177,11 +198,17 @@ describe('Workers HTTP and D1 integration', () => {
     expect(await response.json()).toHaveProperty('error.requestId');
   });
 
-  it('escapes injected HTML in the rendered template', async () => {
+  it('keeps recipient text out of the viewer HTML and preserves the original credential', async () => {
     const { body } = await issue('talk-v1', '<img src=x onerror=alert(1)>');
     const html = await (await runtime.dispatchFetch(body.verificationUrl)).text();
-    expect(html).toContain('&lt;img src=x onerror=alert(1)&gt;');
+    expect(html).not.toContain('&lt;img src=x onerror=alert(1)&gt;');
     expect(html).not.toContain('<img src=x');
+    const response = await runtime.dispatchFetch(
+      `${publicOrigin}/api/v1/certificates/${body.hash}`,
+    );
+    expect(await response.json()).toMatchObject({
+      credential: { credentialSubject: { recipientName: '<img src=x onerror=alert(1)>' } },
+    });
   });
 
   it('rejects malformed and absent hashes and exposes no mutation route', async () => {
@@ -197,6 +224,13 @@ describe('Workers HTTP and D1 integration', () => {
       ).status,
     ).toBe(404);
     expect((await runtime.dispatchFetch(`${publicOrigin}/missing`)).status).toBe(404);
+    expect(
+      (await runtime.dispatchFetch(`${publicOrigin}/api/v1/certificates/bad/pdf`)).status,
+    ).toBe(400);
+    expect(
+      (await runtime.dispatchFetch(`${publicOrigin}/api/v1/certificates/${'0'.repeat(64)}/pdf`))
+        .status,
+    ).toBe(404);
   });
 
   it('denies rendering when an administrator bypasses immutability and corrupts metadata', async () => {
@@ -213,6 +247,8 @@ describe('Workers HTTP and D1 integration', () => {
         `/verify/${body.hash}`,
         `/api/v1/certificates/${body.hash}`,
         `/api/v1/certificates/${body.hash}/credential`,
+        `/api/v1/certificates/${body.hash}/pdf`,
+        `/api/v1/certificates/${body.hash}/pdf?download=1`,
       ]) {
         const response = await runtime.dispatchFetch(`${publicOrigin}${path}`);
         expect(response.status).toBe(409);

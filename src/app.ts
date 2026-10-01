@@ -13,14 +13,17 @@ app.use('*', async (context, next) => {
   await next();
   context.header('X-Request-Id', requestId);
   context.header('X-Content-Type-Options', 'nosniff');
-  context.header('X-Frame-Options', 'DENY');
+  const isPdf = context.res.headers.get('Content-Type') === 'application/pdf';
+  context.header('X-Frame-Options', isPdf ? 'SAMEORIGIN' : 'DENY');
   context.header('Referrer-Policy', 'no-referrer');
   context.header('X-Robots-Tag', 'noindex, nofollow, noarchive');
   context.header('Cache-Control', 'no-store');
   context.header('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
   context.header(
     'Content-Security-Policy',
-    "default-src 'none'; img-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
+    isPdf
+      ? "default-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'"
+      : "default-src 'none'; img-src 'self'; frame-src 'self'; style-src 'self' 'unsafe-inline'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
   );
 });
 
