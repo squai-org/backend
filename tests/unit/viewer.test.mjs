@@ -14,6 +14,12 @@ beforeEach(() => {
   status = { hidden: false, textContent: '', setAttribute: vi.fn() };
   render = vi.fn(() => ({ promise: Promise.resolve(), cancel: vi.fn() }));
   vi.stubGlobal('window', { devicePixelRatio: 3 });
+  vi.stubGlobal('getComputedStyle', () => ({
+    paddingLeft: '0',
+    paddingRight: '0',
+    paddingTop: '0',
+    paddingBottom: '0',
+  }));
   vi.stubGlobal('document', {
     querySelector: (selector) =>
       ({ '#certificate': canvas, '.document': container, '#document-status': status })[selector],

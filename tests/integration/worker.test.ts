@@ -57,8 +57,8 @@ describe('Workers HTTP and D1 integration', () => {
       expect(response.status).toBe(200);
       expect(response.headers.get('Content-Type')).toContain('text/html');
       const html = await response.text();
-      expect(html).not.toContain(input.data.recipientName);
-      expect(html).not.toContain(input.data.courseName);
+      expect(html).toContain(input.data.recipientName);
+      expect(html).toContain(input.data.courseName);
       expect(html).not.toContain('/certificate-assets/');
       expect(html).toContain('Descargar PDF');
       expect(html).toContain(`<canvas id="certificate"`);
@@ -67,7 +67,9 @@ describe('Workers HTTP and D1 integration', () => {
       expect(response.headers.get('X-Frame-Options')).toBe('DENY');
       expect(html).not.toMatch(/<iframe|<input|<form|\{\{/i);
       const paths = [...html.matchAll(/src="([^"]+)"/g)].map((match) => match[1]);
-      expect(paths).toEqual(['/certificate-viewer/viewer.js']);
+      expect(paths).toEqual(['/certificate-viewer/viewer.js', '/brand/mark.svg']);
+      expect(response.headers.get('Content-Security-Policy')).not.toContain("'unsafe-inline'");
+      expect(html).toContain('/certificate-viewer/viewer.css');
       const pdfResponse = await runtime.dispatchFetch(
         `${publicOrigin}/api/v1/certificates/${result.body.hash}/pdf`,
       );
@@ -198,10 +200,10 @@ describe('Workers HTTP and D1 integration', () => {
     expect(await response.json()).toHaveProperty('error.requestId');
   });
 
-  it('keeps recipient text out of the viewer HTML and preserves the original credential', async () => {
+  it('escapes recipient metadata in the viewer and preserves the original credential', async () => {
     const { body } = await issue('talk-v1', '<img src=x onerror=alert(1)>');
     const html = await (await runtime.dispatchFetch(body.verificationUrl)).text();
-    expect(html).not.toContain('&lt;img src=x onerror=alert(1)&gt;');
+    expect(html).toContain('&lt;img src=x onerror=alert(1)&gt;');
     expect(html).not.toContain('<img src=x');
     const response = await runtime.dispatchFetch(
       `${publicOrigin}/api/v1/certificates/${body.hash}`,

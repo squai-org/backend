@@ -36,3 +36,10 @@ await build({
 });
 
 await copyFile('node_modules/pdfjs-dist/LICENSE', 'public/certificate-viewer/LICENSE.txt');
+
+await build({
+  entryPoints: ['src/modules/certificates/presentation/browser/viewer.css'],
+  outfile: 'public/certificate-viewer/viewer.css',
+  minify: true,
+  legalComments: 'none',
+});

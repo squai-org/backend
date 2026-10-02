@@ -98,13 +98,14 @@ test('PDF renderer rejects a broken or incorrectly sized template', async () => 
   ).rejects.toThrow('Missing asset');
 });
 
-test('viewer exposes only document links, with no personal data or constituent images', () => {
+test('viewer displays verified metadata and document links without constituent certificate images', () => {
   const html = renderPdfViewer(certificate);
   expect(html).toContain(`/api/v1/certificates/${certificate.record.hash}/pdf?download=1`);
   expect(html).toContain('<meta name="viewport"');
-  expect(html).not.toContain(input.data.recipientName);
-  expect(html).not.toContain(input.data.courseName);
-  expect(html).not.toMatch(/<img|<iframe|<input|<form/i);
+  expect(html).toContain(input.data.recipientName);
+  expect(html).toContain(input.data.courseName);
+  expect(html).not.toMatch(/<iframe|<input|<form/i);
+  expect(html).toContain('src="/brand/mark.svg"');
   expect(html).toContain('src="/certificate-viewer/viewer.js"');
 });
 

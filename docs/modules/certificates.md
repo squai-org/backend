@@ -76,13 +76,13 @@ D1 conserva una fila por hash. Inserción transaccional con conflicto y lectura 
 
 Las URL dentro de `@context` identifican términos y tipos semánticos; no son rutas de la API. `@protected` protege definiciones JSON-LD, no impide editar una página en DevTools.
 
-El HTML del visor no incluye nombre ni curso. **El PDF y los endpoints de metadatos/credencial son públicos para quien conozca el enlace**. PDF no añade control de acceso. Las respuestas usan CSP, `no-store` y `noindex`; los recursos del visor se sirven sin dependencias externas.
+El HTML del visor presenta nombre, logro, fecha, emisor y código del registro verificado, con escape de texto. El identificador interno del destinatario no aparece en las tarjetas. **El PDF y los endpoints de metadatos/credencial son públicos para quien conozca el enlace**. PDF no añade control de acceso. Las respuestas usan CSP, `no-store` y `noindex`; los recursos del visor se sirven sin dependencias externas.
 
 El PDF no tiene formularios ni JavaScript, pero tampoco firma Adobe/PAdES. Un archivo descargado, una captura o contenido local del navegador pueden modificarse. La autenticidad se comprueba contra el registro oficial y el VC-JWT firmado; la apariencia de una copia no la garantiza.
 
 ## PDF y plantillas
 
-Cada PDF contiene una página Letter horizontal de 792 × 612 puntos, fondo completo, información, fuentes embebidas y enlace de verificación. PDF.js muestra la página completa en un canvas ajustado al ancho y alto disponibles, sin iframe, barras del lector nativo ni scroll propio. El PDF se obtiene desde el host API. Apertura y descarga se mantienen como alternativas ante JavaScript deshabilitado o fallos de renderizado; la descarga permite acceso al texto del PDF con tecnologías de asistencia.
+Cada PDF contiene una página Letter horizontal de 792 × 612 puntos, fondo completo, información, fuentes embebidas y enlace de verificación. PDF.js muestra la página completa en un canvas ajustado al ancho y alto disponibles, sin iframe, barras del lector nativo ni scroll propio. El PDF se obtiene desde el host API. El navbar oscuro y las fuentes Familjen Grotesk, Atkinson Hyperlegible Next y Gloria Hallelujah reutilizan la marca de la landing; el único CTA dirige a `https://squai.io`. Los metadatos se presentan en tarjetas bento, diferenciando programa y charla. Copiar conserva los 64 caracteres del hash, aunque en móvil se abrevie visualmente; si el navegador deniega el portapapeles, la interfaz lo anuncia. Estilos, fuentes y marca se sirven localmente, con CSP sin scripts ni estilos inline. Apertura y descarga se mantienen como alternativas ante JavaScript deshabilitado o fallos de renderizado; la descarga permite acceso al texto del PDF con tecnologías de asistencia.
 
 No se utiliza Cloudflare Browser Run ni una API de renderizado de pago. `pdf-lib`, `@pdf-lib/fontkit` y Playwright son dependencias de desarrollo: preparan los fondos y manifiestos fuera del Worker. En la solicitud, el Worker añade texto y enlace mediante una actualización incremental del PDF. JOSE es la dependencia específica de runtime; hashing y Ed25519 usan Web Crypto. PDF.js 6.3.289, verificado contra npm latest el 2026-10-01, se empaqueta como recursos estáticos para el navegador; no renderiza PDF dentro del Worker ni utiliza CDN. La licencia se incluye en esos recursos.
 
@@ -99,13 +99,13 @@ Las fuentes actuales cubren su repertorio latino, incluidos acentos españoles. 
 
 ## Métricas y generación masiva
 
-Validación local del **2026-10-01** para la separación de dominios y el visor PDF.js. Las métricas son de desarrollo; CPU de producción sigue pendiente.
+Validación local del **2026-10-02** para la integración del diseño aprobado y el visor PDF.js. Las métricas son de desarrollo; CPU de producción sigue pendiente.
 
 | Métrica | Resultado / alcance |
 | --- | --- |
-| Pruebas | 88 unitarias e integración aprobadas, más renderizado en navegador |
-| Cobertura de líneas | 97,96% en la ejecución local; detalle en `coverage/lcov.info` |
-| Worker | Aproximadamente 103 KiB sin comprimir; 31 KiB gzip en dry run |
+| Pruebas | 90 unitarias e integración aprobadas, más renderizado en navegador |
+| Cobertura de líneas | 98,09% en la ejecución local; detalle en `coverage/lcov.info` |
+| Worker | Aproximadamente 104 KiB sin comprimir; 32 KiB gzip en dry run |
 | Fondos PDF preparados | Aproximadamente 1,37–1,40 MB cada uno, antes del texto variable |
 | CPU del endpoint en Cloudflare | Pendiente de medir en producción; las pruebas locales no certifican el presupuesto Free |
 
@@ -117,7 +117,7 @@ La emisión no genera el PDF: se genera al pedir su endpoint, después de verifi
 | --- | --- |
 | Emitir | 1 |
 | Obtener PDF directamente | 1 adicional |
-| Abrir visor y cargar PDF | Al menos 4: HTML, script, worker de PDF.js y PDF |
+| Abrir visor y cargar PDF | Al menos 9: HTML, CSS, script, worker de PDF.js, PDF, marca y tres fuentes; el navegador puede solicitar además el favicon |
 | Descargar después | 1 adicional; vuelve a generar PDF |
 
 Por ejemplo, 10.000 emisiones más una petición directa del PDF por certificado suman **20.000 solicitudes**, sin reintentos ni otro tráfico. El navegador puede añadir peticiones. Las respuestas `no-store` no amortizan visitas posteriores mediante caché.
@@ -135,4 +135,4 @@ npx playwright install chromium
 npm run test:browser
 ```
 
-CI instala Chromium y ejecuta ambos diseños en 320×568, 390×844, 768×1024, 1366×768, 1920×1080 y 844×390. Comprueba página completa visible, proporción Letter, ausencia de scroll y controles nativos, descarga y errores JavaScript. Son viewports emulados en Chromium, no dispositivos físicos ni cobertura de todos los navegadores. Las capturas se guardan en `test-results/`.
+CI instala Chromium y ejecuta ambos diseños en 320×568, 390×844, 768×1024, 1366×768, 1920×1080 y 844×390. Comprueba página completa visible, proporción Letter, ausencia de scroll y controles nativos, metadatos dentro de sus tarjetas, fuentes de marca, CTA, copia del código completo, descarga y errores JavaScript. Añade un caso móvil con nombre y curso largos. Son viewports emulados en Chromium, no dispositivos físicos ni cobertura de todos los navegadores. Las capturas se guardan en `test-results/`.

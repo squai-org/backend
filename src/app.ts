@@ -25,7 +25,7 @@ app.use('*', async (context, next) => {
   context.header(
     'Content-Security-Policy',
     isViewer
-      ? `default-src 'none'; script-src 'self'; worker-src 'self'; connect-src 'self' ${apiOrigin}; img-src 'self' blob: data:; font-src 'self' blob:; style-src 'self' 'unsafe-inline'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'`
+      ? `default-src 'none'; script-src 'self'; worker-src 'self'; connect-src 'self' ${apiOrigin}; img-src 'self' blob: data:; font-src 'self' blob:; style-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'`
       : "default-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
   );
 });
@@ -44,6 +44,7 @@ app.use(
 app.get('/health', (context) => context.json({ status: 'ok' }));
 app.get('/certificate-assets/*', (context) => context.env.ASSETS.fetch(context.req.raw));
 app.get('/certificate-viewer/*', (context) => context.env.ASSETS.fetch(context.req.raw));
+app.get('/brand/*', (context) => context.env.ASSETS.fetch(context.req.raw));
 app.route('/', certificateRoutes);
 app.notFound((context) =>
   context.json({ error: { code: 'NOT_FOUND', requestId: context.get('requestId') } }, 404),

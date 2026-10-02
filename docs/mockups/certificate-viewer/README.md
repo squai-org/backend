@@ -6,7 +6,7 @@ Referencia: `squai-org/landing` en su rama principal, componentes Header, Logo, 
 
 El documento ocupa una tarjeta redondeada y mantiene su proporción completa. Los bento muestran destinatario, programa, fecha, emisor y código. Descargar tiene prioridad; Ver en grande permite leer el documento pequeño en móvil. El código puede copiarse. Datos y PDF son de ejemplo, sin consultas a producción.
 
-En una implementación posterior, el documento y metadatos se obtendrán de `api.squai.io`; el PDF se renderizará con el visor PDF.js del PR funcional. Esta propuesta usa una captura del PDF para revisar composición. No se integra hasta revisar el diseño.
+El diseño fue aprobado. Su implementación está en `src/modules/certificates/presentation/`: renderiza metadatos del registro verificado y carga el PDF desde `api.squai.io` mediante PDF.js. Los archivos de este directorio conservan la propuesta estática original con datos de ejemplo; no se sirven en producción.
 
 La restricción de no hacer scroll obliga a reducir la vista del documento en pantallas pequeñas; los datos clave siguen disponibles como texto. El certificado se muestra completo. En móvil el código se abrevia visualmente y Copiar conserva los 64 caracteres; destinatario, programa, fecha y emisor permanecen visibles.
 
