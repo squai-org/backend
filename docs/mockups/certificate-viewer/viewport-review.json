@@ -1,0 +1,110 @@
+[
+  {
+    "device": "desktop",
+    "width": 1366,
+    "height": 768,
+    "scrollWidth": 1366,
+    "scrollHeight": 768,
+    "fonts": true,
+    "image": {
+      "x": 230.71875,
+      "y": 282.234375,
+      "width": 449.96875,
+      "height": 347.75,
+      "top": 282.234375,
+      "right": 680.6875,
+      "bottom": 629.984375,
+      "left": 230.71875
+    }
+  },
+  {
+    "device": "large",
+    "width": 1920,
+    "height": 1080,
+    "scrollWidth": 1920,
+    "scrollHeight": 1080,
+    "fonts": true,
+    "image": {
+      "x": 318,
+      "y": 301.21875,
+      "width": 808.75,
+      "height": 625.046875,
+      "top": 301.21875,
+      "right": 1126.75,
+      "bottom": 926.265625,
+      "left": 318
+    }
+  },
+  {
+    "device": "mobile",
+    "width": 390,
+    "height": 844,
+    "scrollWidth": 390,
+    "scrollHeight": 844,
+    "fonts": true,
+    "image": {
+      "x": 30,
+      "y": 263.734375,
+      "width": 330,
+      "height": 255.03125,
+      "top": 263.734375,
+      "right": 360,
+      "bottom": 518.765625,
+      "left": 30
+    }
+  },
+  {
+    "device": "small",
+    "width": 320,
+    "height": 568,
+    "scrollWidth": 320,
+    "scrollHeight": 568,
+    "fonts": true,
+    "image": {
+      "x": 73.953125,
+      "y": 179,
+      "width": 172.078125,
+      "height": 132.984375,
+      "top": 179,
+      "right": 246.03125,
+      "bottom": 311.984375,
+      "left": 73.953125
+    }
+  },
+  {
+    "device": "tablet",
+    "width": 768,
+    "height": 1024,
+    "scrollWidth": 768,
+    "scrollHeight": 1024,
+    "fonts": true,
+    "image": {
+      "x": 30,
+      "y": 191.65625,
+      "width": 708,
+      "height": 547.171875,
+      "top": 191.65625,
+      "right": 738,
+      "bottom": 738.828125,
+      "left": 30
+    }
+  },
+  {
+    "device": "landscape",
+    "width": 844,
+    "height": 390,
+    "scrollWidth": 844,
+    "scrollHeight": 390,
+    "fonts": true,
+    "image": {
+      "x": 186.796875,
+      "y": 170.5,
+      "width": 162.375,
+      "height": 125.484375,
+      "top": 170.5,
+      "right": 349.171875,
+      "bottom": 295.984375,
+      "left": 186.796875
+    }
+  }
+]
