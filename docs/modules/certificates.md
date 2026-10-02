@@ -128,6 +128,12 @@ Las ráfagas comparten memoria, capacidad D1 y cuotas con otros módulos. No cal
 
 Referencias: [VC 2.0](https://www.w3.org/TR/vc-data-model-2.0/), [VC-JOSE-COSE](https://www.w3.org/TR/vc-jose-cose/), [Web Crypto en Workers](https://developers.cloudflare.com/workers/runtime-apis/web-crypto/).
 
+## Smoke de producción
+
+Los 16 contratos de `scripts/smoke/checks.mjs` comprueban salud y claves públicas en `api.squai.io`, lectura D1 de un hash inexistente, rechazo de emisión sin autorización, separación de endpoints del frontend, redirección histórica de JWKS y respuesta del PDF inexistente. En `www.verify.squai.io` validan MIME y contenido inicial del visor, su CSS, el worker PDF.js, el logo y las tres fuentes.
+
+El smoke no emite certificados ni usa tokens o datos de estudiantes. La prueba de integración ejecuta la suite contra Miniflare y confirma que la tabla permanece vacía. Un PDF válido y el diseño responsive se verifican en las pruebas de integración y navegador con fixtures locales; el smoke no demuestra el presupuesto de CPU del PDF en producción. Timeouts, reintentos, categorías de error y artefactos: [política compartida de CI/CD](../platform/ci-cd.md#smoke-test-después-del-despliegue).
+
 ## Pruebas de presentación
 
 ```sh
