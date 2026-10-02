@@ -25,9 +25,17 @@ async function assetContract(response, types, magic) {
   if (!response.body) return 'EMPTY_BODY';
   const reader = response.body.getReader();
   try {
-    const { value } = await reader.read();
-    if (!value?.length) return 'EMPTY_BODY';
-    const prefix = new TextDecoder().decode(value.subarray(0, 256)).trimStart();
+    const bytes = new Uint8Array(256);
+    let length = 0;
+    while (length < bytes.length) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      const chunk = value.subarray(0, bytes.length - length);
+      bytes.set(chunk, length);
+      length += chunk.length;
+    }
+    if (!length) return 'EMPTY_BODY';
+    const prefix = new TextDecoder().decode(bytes.subarray(0, length)).trimStart();
     if (/^<!doctype\s+html|^<html/i.test(prefix)) return 'INVALID_BODY';
     return magic && !magic.test(prefix) ? 'INVALID_BODY' : null;
   } finally {
@@ -60,7 +68,7 @@ export function productionChecks(api = apiOrigin, frontend = publicOrigin) {
           body.keys.length > 0 &&
           body.keys.every(
             (key) =>
-              key.kty === 'OKP' &&
+              key?.kty === 'OKP' &&
               key.crv === 'Ed25519' &&
               typeof key.x === 'string' &&
               !Object.hasOwn(key, 'd'),

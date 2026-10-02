@@ -230,11 +230,24 @@ describe('production contracts', () => {
       '{"keys":[{"kty":"OKP","crv":"Ed25519","x":"public","d":"private"}]}',
       'INVALID_BODY',
     ],
+    ['public_keys', 'application/json', '{"keys":[null]}', 'INVALID_BODY'],
   ])('rejects a broken %s contract without retry', async (id, type, body, reason) => {
     const run = harness([new Response(body, { headers: { 'Content-Type': type } })]);
     const report = await runSmokeChecks([contract(id)], run.options);
     expect(report.results[0].reason).toBe(reason);
     expect(run.fetchFn).toHaveBeenCalledTimes(1);
+  });
+
+  test('accepts valid asset signatures split across network chunks', async () => {
+    const chunks = ['w', 'OF', '2font-data'];
+    const body = new ReadableStream({
+      pull(controller) {
+        if (chunks.length) controller.enqueue(new TextEncoder().encode(chunks.shift()));
+        else controller.close();
+      },
+    });
+    const run = harness([new Response(body, { headers: { 'Content-Type': 'font/woff2' } })]);
+    expect((await runSmokeChecks([contract('familjen_font')], run.options)).passed).toBe(true);
   });
 
   test('validates redirect target without following it', async () => {
