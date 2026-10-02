@@ -37,4 +37,22 @@ CD prepara configuración y secretos, aplica migraciones aditivas, publica el Wo
 
 Ante un fallo, revisa qué etapas se ejecutaron antes de repetir. Revertir el Worker no revierte una migración aplicada: evita borrar o deshacer datos de producción sin un procedimiento específico.
 
+## Smoke test después del despliegue
+
+El build incorpora el SHA del commit y el Worker devuelve `X-Deployment-Version` en sus respuestas. CD exige el SHA de la ejecución mediante `SMOKE_EXPECTED_VERSION`: primero espera `/health` en el dominio de API y luego comprueba la versión en cada contrato. Un fallo de readiness omite los demás checks y hace fallar el job; un fallo independiente permite recoger los resultados restantes.
+
+Cada intento tiene un timeout nuevo de 10 segundos, incluyendo la lectura del contenido. La suite tiene un presupuesto de 90 segundos y un máximo de cuatro intentos por check, con espera exponencial y jitter. Solo se reintentan fallos de red temporales, timeouts, respuestas 408, 429, 500, 502–504 y 520–524, o una versión anterior. Los 404 de assets nuevos tienen una ventana de 30 segundos desde el inicio de la suite. Se respeta `Retry-After` en 429 y 503 sin superar el presupuesto. Errores de contrato, certificados TLS inválidos y otros estados inesperados fallan sin reintento; los 401 y 404 previstos son resultados válidos.
+
+Los logs JSON identifican check, método, URL, intento, estado HTTP, duración, tipo de contenido, versión, `X-Request-Id`, `CF-Ray` y categoría de error. No guardan cuerpos de respuesta, credenciales ni mensajes de excepciones. Las redirecciones se inspeccionan sin seguirlas automáticamente.
+
+GitHub muestra una tabla en el resumen del job y conserva `report.json` y `summary.md` en el artefacto `smoke-<sha>-<intento>` durante siete días, también si falla la suite. `recovered` indica que un check necesitó reintentos; `skipped` nunca cuenta como éxito. Un smoke fallido marca CD como fallido, pero no revierte automáticamente el Worker ya publicado ni las migraciones.
+
+Para repetir solo las comprobaciones públicas desde una copia del repositorio:
+
+```sh
+SMOKE_EXPECTED_VERSION=<sha-desplegado> node scripts/smoke-test.mjs
+```
+
+Sin `SMOKE_EXPECTED_VERSION` se validan los contratos, pero no la revisión desplegada. Los contratos de cada módulo se documentan junto a la feature; el motor compartido está en `scripts/smoke/runner.mjs`. Sus pruebas unitarias simulan propagación, timeouts, presupuestos y fallos permanentes; las de integración ejecutan los contratos contra el Worker compilado con Miniflare.
+
 Referencia: [análisis de SonarCloud con GitHub Actions](https://docs.sonarsource.com/sonarqube-cloud/advanced-setup/ci-based-analysis/github-actions-for-sonarcloud/).

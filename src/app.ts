@@ -3,6 +3,7 @@ import { cors } from 'hono/cors';
 import { HTTPException } from 'hono/http-exception';
 import { certificateRoutes } from './modules/certificates/presentation/routes';
 import type { HttpEnvironment } from './platform/bindings';
+import { buildVersion } from './platform/build-version';
 import { errorStatus } from './platform/error-status';
 import { originPolicy } from './platform/origin-policy';
 import { ApplicationError } from './shared/errors';
@@ -14,6 +15,7 @@ app.use('*', async (context, next) => {
   context.set('requestId', requestId);
   await next();
   context.header('X-Request-Id', requestId);
+  context.header('X-Deployment-Version', buildVersion);
   context.header('X-Content-Type-Options', 'nosniff');
   const isViewer = context.req.path.startsWith('/verify/') && context.res.status === 200;
   const apiOrigin = context.env.API_ORIGIN ?? '';

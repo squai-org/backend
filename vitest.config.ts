@@ -1,7 +1,9 @@
 import { readFileSync } from 'node:fs';
 import { defineConfig } from 'vitest/config';
+import { resolveBuildVersion } from './scripts/build-version.mjs';
 
 export default defineConfig({
+  define: { __BUILD_VERSION__: JSON.stringify(resolveBuildVersion()) },
   plugins: [
     {
       name: 'certificate-template-text',

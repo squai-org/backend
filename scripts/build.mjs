@@ -1,8 +1,10 @@
 import { copyFile } from 'node:fs/promises';
 import { build } from 'esbuild';
+import { resolveBuildVersion } from './build-version.mjs';
 
 await build({
   entryPoints: ['src/index.ts'],
+  define: { __BUILD_VERSION__: JSON.stringify(resolveBuildVersion()) },
   outfile: 'dist/worker.js',
   bundle: true,
   format: 'esm',

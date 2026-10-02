@@ -10,3 +10,4 @@ playwright-report/
 wrangler.deploy.json
 .deployment-secrets.json
 public/certificate-viewer/
+smoke-results/
