@@ -15,6 +15,7 @@ export class WebCryptoCredentials implements CredentialCryptography {
     private readonly privateJwk: string | undefined,
     jwksJson: string,
     private readonly publicOrigin: string,
+    private readonly apiOrigin: string = publicOrigin,
   ) {
     const jwks = JSON.parse(jwksJson) as { keys?: JWK[] };
     if (
@@ -52,11 +53,18 @@ export class WebCryptoCredentials implements CredentialCryptography {
         };
       }),
     };
+    if (this.apiOrigin !== this.publicOrigin)
+      this.jwks.keys.push(
+        ...this.jwks.keys.map((key) => ({
+          ...key,
+          kid: `${this.publicOrigin}/.well-known/jwks.json#${key.kid?.split('#')[1]}`,
+        })),
+      );
     if (!this.publicKeys.has(activeKeyId)) throw new Error('Active public key missing');
   }
 
   private keyUrl(keyId: string): string {
-    return `${this.publicOrigin}/.well-known/jwks.json#${keyId}`;
+    return `${this.apiOrigin}/.well-known/jwks.json#${keyId}`;
   }
 
   private signingKey(): Promise<CryptoKey> {
@@ -98,7 +106,7 @@ export class WebCryptoCredentials implements CredentialCryptography {
       return await crypto.subtle.verify(
         'Ed25519',
         await key,
-        base64url.decode(signature),
+        new Uint8Array(base64url.decode(signature)),
         this.hashBytes(hash),
       );
     } catch {
@@ -118,7 +126,15 @@ export class WebCryptoCredentials implements CredentialCryptography {
     const { payload, protectedHeader } = await compactVerify(jwt, await key, {
       algorithms: ['EdDSA'],
     });
-    if (protectedHeader.typ !== 'vc+jwt' || protectedHeader.kid !== this.keyUrl(keyId))
+    const trustedKeyUrls = [
+      this.keyUrl(keyId),
+      `${this.publicOrigin}/.well-known/jwks.json#${keyId}`,
+    ];
+    if (
+      protectedHeader.typ !== 'vc+jwt' ||
+      typeof protectedHeader.kid !== 'string' ||
+      !trustedKeyUrls.includes(protectedHeader.kid)
+    )
       throw new Error('Invalid credential header');
     return JSON.parse(new TextDecoder().decode(payload));
   }

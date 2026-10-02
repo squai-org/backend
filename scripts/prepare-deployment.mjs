@@ -54,7 +54,7 @@ config.d1_databases[0].database_name = 'squai-certificates';
 config.vars.SIGNING_KEY_ID = process.env.SIGNING_KEY_ID;
 config.vars.VERIFICATION_KEYS_JWKS = process.env.VERIFICATION_KEYS_JWKS;
 config.vars.API_ORIGIN = 'https://api.squai.io';
-config.routes = ['api.squai.io', 'www.verify.squai.io', 'verify.squai.io'].map((pattern) => ({
+config.routes = ['api.squai.io', 'www.verify.squai.io'].map((pattern) => ({
   pattern,
   custom_domain: true,
 }));

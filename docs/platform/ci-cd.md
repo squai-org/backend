@@ -31,6 +31,8 @@ npx wrangler d1 create squai-certificates
 
 Guarda el ID devuelto en `CLOUDFLARE_D1_DATABASE_ID`. El ID de [wrangler.json](../../wrangler.json) es exclusivamente local; [prepare-deployment.mjs](../../scripts/prepare-deployment.mjs) lo reemplaza y rechaza el placeholder en producción.
 
+CI también ejecuta el navegador de los módulos que lo requieren; sus instrucciones están en cada documento funcional.
+
 CD prepara configuración y secretos, aplica migraciones aditivas, publica el Worker y comprueba los endpoints mediante [smoke-test.mjs](../../scripts/smoke-test.mjs). Los archivos temporales de secretos se eliminan al finalizar. Dependencias y Actions están fijadas; Dependabot propone actualizaciones.
 
 Ante un fallo, revisa qué etapas se ejecutaron antes de repetir. Revertir el Worker no revierte una migración aplicada: evita borrar o deshacer datos de producción sin un procedimiento específico.

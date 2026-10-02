@@ -104,7 +104,8 @@ test('viewer exposes only document links, with no personal data or constituent i
   expect(html).toContain('<meta name="viewport"');
   expect(html).not.toContain(input.data.recipientName);
   expect(html).not.toContain(input.data.courseName);
-  expect(html).not.toMatch(/<img|<script|<input|<form/i);
+  expect(html).not.toMatch(/<img|<iframe|<input|<form/i);
+  expect(html).toContain('src="/certificate-viewer/viewer.js"');
 });
 
 test('original versioned HTML templates remain intact and escape dynamic text', () => {
