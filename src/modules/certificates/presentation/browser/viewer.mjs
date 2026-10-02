@@ -1,4 +1,5 @@
 import { GlobalWorkerOptions, getDocument } from 'pdfjs-dist/build/pdf.mjs';
+import './copy-code.mjs';
 
 GlobalWorkerOptions.workerSrc = '/certificate-viewer/pdf.worker.js';
 const canvas = document.querySelector('#certificate');
@@ -17,9 +18,18 @@ async function fitDocument() {
   }
   if (current !== generation) return;
   const original = page.getViewport({ scale: 1 });
+  const style = getComputedStyle(container);
+  const width =
+    container.clientWidth -
+    Number.parseFloat(style.paddingLeft) -
+    Number.parseFloat(style.paddingRight);
+  const height =
+    container.clientHeight -
+    Number.parseFloat(style.paddingTop) -
+    Number.parseFloat(style.paddingBottom);
   const scale = Math.min(
-    container.clientWidth / original.width,
-    container.clientHeight / original.height,
+    Math.max(1, width) / original.width,
+    Math.max(1, height) / original.height,
   );
   const viewport = page.getViewport({ scale });
   const density = Math.min(window.devicePixelRatio || 1, 2);

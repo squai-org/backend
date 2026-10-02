@@ -24,6 +24,13 @@ if (
   throw new Error('Historical key discovery redirect failed');
 const missingPdf = await fetch(`${apiOrigin}/api/v1/certificates/${'0'.repeat(64)}/pdf`, options);
 if (missingPdf.status !== 404) throw new Error('PDF verification read failed');
-const viewerScript = await fetch(`${origin}/certificate-viewer/viewer.js`, options);
-if (!viewerScript.ok) throw new Error('Certificate viewer asset unavailable');
+for (const path of [
+  '/certificate-viewer/viewer.js',
+  '/certificate-viewer/viewer.css',
+  '/brand/mark.svg',
+  '/brand/gloria-hallelujah-latin.woff2',
+]) {
+  const asset = await fetch(`${origin}${path}`, options);
+  if (!asset.ok) throw new Error('Certificate viewer asset unavailable');
+}
 console.log('Production smoke tests passed');

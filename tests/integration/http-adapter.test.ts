@@ -128,7 +128,7 @@ test('HTTP errors reject invalid authentication, transport, size and JSON safely
   expect((await app.request('/.well-known/jwks.json', undefined, bindings)).status).toBe(200);
 });
 
-test('PDF viewer contains no recipient HTML and preserves signed values in the API', async () => {
+test('PDF viewer escapes verified recipient metadata and preserves signed values in the API', async () => {
   const recipientName = '<script>a&"b\'c</script>';
   const payload = {
     ...input,
@@ -141,7 +141,7 @@ test('PDF viewer contains no recipient HTML and preserves signed values in the A
   );
   const { hash } = (await response.json()) as { hash: string };
   const html = await (await app.request(`/verify/${hash}`, undefined, bindings)).text();
-  expect(html).not.toContain('&lt;script&gt;a&amp;&quot;b&#39;c&lt;/script&gt;');
+  expect(html).toContain('&lt;script&gt;a&amp;&quot;b&#39;c&lt;/script&gt;');
   expect(html).not.toContain('<script>');
   const json = await (
     await app.request(`/api/v1/certificates/${hash}`, undefined, bindings)
@@ -232,4 +232,14 @@ test('enforces canonical host routing before running a business handler', async 
     productionBindings,
   );
   expect(script.status).toBe(200);
+  for (const path of [
+    '/certificate-viewer/viewer.css',
+    '/brand/mark.svg',
+    '/brand/gloria-hallelujah-latin.woff2',
+  ]) {
+    expect((await app.request(`${frontend}${path}`, undefined, productionBindings)).status).toBe(
+      200,
+    );
+    expect((await app.request(`${api}${path}`, undefined, productionBindings)).status).toBe(404);
+  }
 });
