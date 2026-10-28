@@ -22,13 +22,13 @@
     "test:browser": "npm run build && vitest run --config vitest.browser.config.ts"
   },
   "dependencies": {
-    "hono": "4.13.13",
+    "hono": "4.13.14",
     "jose": "6.2.13"
   },
   "devDependencies": {
-    "@babel/parser": "8.0.7",
-    "@biomejs/biome": "2.6.2",
-    "@cloudflare/workers-types": "5.20261023.1",
+    "@babel/parser": "8.0.8",
+    "@biomejs/biome": "2.6.3",
+    "@cloudflare/workers-types": "5.20261025.1",
     "@pdf-lib/fontkit": "1.1.1",
     "@types/node": "26.6.5",
     "@vitest/coverage-v8": "5.0.5",
