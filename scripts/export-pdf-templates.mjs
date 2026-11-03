@@ -4,7 +4,15 @@ import { PDFDocument, PDFName } from 'pdf-lib';
 import { chromium } from 'playwright';
 
 const assetRoot = 'public/certificate-assets/pdf-v1';
-const manifest = { fonts: {}, templates: {} };
+const manifestPath = 'src/modules/certificates/presentation/templates/pdf-manifest.json';
+const allTemplates = ['program-v1', 'talk-v1', 'training-v1'];
+const requested = process.argv.slice(2);
+const selected = requested.length ? requested : allTemplates;
+for (const templateId of selected)
+  if (!allTemplates.includes(templateId)) throw new Error(`Unknown template: ${templateId}`);
+const manifest = requested.length
+  ? JSON.parse(await readFile(manifestPath, 'utf8'))
+  : { fonts: {}, templates: {} };
 const fonts = await Promise.all(
   ['atkinson-regular.ttf', 'familjen-bold.ttf'].map(async (name) =>
     (await readFile(`${assetRoot}/${name}`)).toString('base64'),
@@ -18,7 +26,7 @@ const browser = await chromium.launch({
 });
 try {
   const page = await browser.newPage();
-  for (const templateId of ['program-v1', 'talk-v1', 'training-v1']) {
+  for (const templateId of selected) {
     const source = await readFile(
       `src/modules/certificates/presentation/templates/${templateId}.html`,
       'utf8',
@@ -94,10 +102,7 @@ try {
     await writeFile(`${assetRoot}/${templateId}.pdf`, prepared);
     console.log(`Exported Letter template: ${templateId}`);
   }
-  await writeFile(
-    'src/modules/certificates/presentation/templates/pdf-manifest.json',
-    JSON.stringify(manifest),
-  );
+  await writeFile(manifestPath, JSON.stringify(manifest));
 } finally {
   await browser.close();
 }
