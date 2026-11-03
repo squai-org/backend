@@ -91,6 +91,16 @@ test('PDF link rejects non-ASCII URLs and escapes PDF string delimiters', async 
   );
 });
 
+test('training-v1 certificate uses attendance copy', () => {
+  const training = structuredClone(certificate);
+  training.record.payload.templateId = 'training-v1';
+  const html = renderCertificate(training);
+  expect(html).toContain('Certificado de asistencia');
+  expect(html).toContain('asistió a la capacitación');
+  expect(html).not.toContain('aprobación');
+  expect(html).not.toContain('completó el programa');
+});
+
 test('PDF fits long names and course titles without changing signed text', async () => {
   const font = manifest.fonts.Heading;
   for (const value of [
