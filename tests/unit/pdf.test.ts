@@ -157,6 +157,17 @@ test('viewer displays verified metadata and document links without constituent c
   expect(html).toContain('src="/certificate-viewer/viewer.js"');
 });
 
+test.each([
+  ['program-v1', 'Programa completado'],
+  ['talk-v1', 'Charla'],
+  ['training-v1', 'Capacitación'],
+] as const)('viewer labels %s certificates as %s', (templateId, label) => {
+  const target = structuredClone(certificate);
+  target.record.payload.templateId = templateId;
+  expect(renderPdfViewer(target)).toContain(`<span class="label">${label}</span>`);
+  expect(renderPdfViewer(target)).not.toContain('acreditada');
+});
+
 test('original versioned HTML templates remain intact and escape dynamic text', () => {
   const original = structuredClone(certificate);
   original.record.payload.data.recipientName = '<script>a&"b\'c</script>';
