@@ -46,7 +46,7 @@ describe('Workers HTTP and D1 integration', () => {
     expect(response.headers.get('X-Request-Id')).toMatch(/^[a-f0-9-]{36}$/);
   });
 
-  it.each(['program-v1', 'talk-v1'])(
+  it.each(['program-v1', 'talk-v1', 'training-v1'])(
     'issues and displays a downloadable Letter PDF for %s',
     async (templateId) => {
       const result = await issue(templateId);

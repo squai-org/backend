@@ -38,7 +38,7 @@ export function appendPdfContent(
     [contentId, `<< /Length ${content.length} >>\nstream\n${content}\nendstream`],
     [
       linkId,
-      `<< /Type /Annot /Subtype /Link /Rect [543 18 738 47] /Border [0 0 0] /A << /S /URI /URI ${pdfString(verificationUrl)} >> >>`,
+      `<< /Type /Annot /Subtype /Link /F 4 /Rect [543 20 738 72] /Border [0 0 0] /A << /S /URI /URI ${pdfString(verificationUrl)} >> >>`,
     ],
     [
       infoId,

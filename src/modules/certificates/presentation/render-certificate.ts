@@ -1,8 +1,13 @@
 import type { TemplateId, VerifiedCertificate } from '../domain/certificate';
 import program from './templates/program-v1.html';
 import talk from './templates/talk-v1.html';
+import training from './templates/training-v1.html';
 
-const templates: Record<TemplateId, string> = { 'program-v1': program, 'talk-v1': talk };
+const templates: Record<TemplateId, string> = {
+  'program-v1': program,
+  'talk-v1': talk,
+  'training-v1': training,
+};
 
 export function escapeHtml(value: string): string {
   return value.replace(

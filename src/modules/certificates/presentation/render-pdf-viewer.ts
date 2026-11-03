@@ -19,7 +19,7 @@ export function renderPdfViewer(certificate: VerifiedCertificate, apiOrigin = ''
     .map((part) => part.value)
     .join(' ');
   const achievement =
-    payload.templateId === 'program-v1' ? 'Programa completado' : 'Charla acreditada';
+    payload.templateId === 'talk-v1' ? 'Charla acreditada' : 'Programa completado';
   const shortHash = `${hash.slice(0, 12)}…${hash.slice(-8)}`;
   return `<!doctype html>
 <html lang="es">
@@ -39,8 +39,8 @@ export function renderPdfViewer(certificate: VerifiedCertificate, apiOrigin = ''
 <a class="cta" href="https://squai.io"><span>Sigue aprendiendo</span><span aria-hidden="true">↗</span></a>
 </header>
 <section class="hero" aria-label="Verificación de certificado">
-<h1>Tu aprendizaje, <span>con respaldo.</span></h1>
-<p class="hand">Aprender en serio merece dejar huella.</p>
+<h1>Gracias por aprender con nosotros.</h1>
+<p class="hand">Aquí está tu certificado. Descárgalo y compártelo con quien quieras.</p>
 </section>
 <main class="content">
 <section class="document-card" aria-label="Certificado">

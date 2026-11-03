@@ -23,7 +23,7 @@ afterAll(async () => {
   await resources?.runtime.dispose();
 });
 
-test.each(['program-v1', 'talk-v1'])(
+test.each(['program-v1', 'talk-v1', 'training-v1'])(
   'HTTP adapter persists and renders %s against D1',
   async (templateId) => {
     const payload = {

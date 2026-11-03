@@ -161,9 +161,6 @@ h2 {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 16px;
-  background: #f4f6ff;
-  padding: 10px;
 }
 .document canvas {
   display: block;
@@ -172,6 +169,7 @@ h2 {
   width: auto;
   height: auto;
   object-fit: contain;
+  border-radius: 16px;
   box-shadow: 0 8px 18px #0a0c1a0a;
 }
 .actions {
@@ -391,8 +389,7 @@ h2 {
     gap: 5px;
     white-space: nowrap;
   }
-  .document {
-    padding: 6px;
+  .document canvas {
     border-radius: 12px;
   }
   .metadata {
