@@ -1,5 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { PDFDocument } from 'pdf-lib';
+import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs';
 import { beforeAll, expect, test } from 'vitest';
 import { IssueCertificate } from '../../src/modules/certificates/application/issue-certificate';
 import { VerifyCertificate } from '../../src/modules/certificates/application/verify-certificate';
@@ -51,6 +52,43 @@ test('PDF embeds the local fonts, contains one Letter page and no editable form 
   expect(pdf.getSubject()).toContain(certificate.verificationUrl);
   expect(pdf.getForm().getFields()).toEqual([]);
   expect(pdf.getCreationDate()?.toISOString()).toBe(certificate.record.issuedAt);
+});
+
+test.each(['program-v1', 'talk-v1', 'training-v1'] as const)(
+  'PDF %s exposes one clickable link to the verification URL over the printed URL',
+  async (templateId) => {
+    const target = structuredClone(certificate);
+    target.record.payload.templateId = templateId;
+    const bytes = await renderCertificatePdf(target, loadAsset);
+    const task = getDocument({ data: bytes });
+    const document = await task.promise;
+    const annotations = (await (await document.getPage(1)).getAnnotations()).filter(
+      (annotation) => annotation.subtype === 'Link',
+    );
+    expect(annotations).toHaveLength(1);
+    const [link] = annotations;
+    expect(link?.url).toBe(certificate.verificationUrl);
+    expect(link?.annotationFlags & 4).toBe(4);
+    const [left = 0, bottom = 0, right = 0, top = 0] = link?.rect ?? [];
+    expect(left).toBeLessThanOrEqual(543);
+    expect(right).toBeGreaterThanOrEqual(738);
+    expect(bottom).toBeLessThanOrEqual(25);
+    expect(top).toBeGreaterThanOrEqual(58);
+    expect(right).toBeLessThanOrEqual(792);
+    expect(top).toBeLessThanOrEqual(612);
+    await task.destroy();
+  },
+);
+
+test('PDF link rejects non-ASCII URLs and escapes PDF string delimiters', async () => {
+  const target = structuredClone(certificate);
+  target.verificationUrl = 'https://squai.io/verify/ñ';
+  await expect(renderCertificatePdf(target, loadAsset)).rejects.toThrow('printable ASCII');
+  target.verificationUrl = 'https://squai.io/verify/a(b)c\\d';
+  const bytes = await renderCertificatePdf(target, loadAsset);
+  expect(new TextDecoder('latin1').decode(bytes)).toContain(
+    '/URI (https://squai.io/verify/a\\(b\\)c\\\\d)',
+  );
 });
 
 test('PDF fits long names and course titles without changing signed text', async () => {

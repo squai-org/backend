@@ -7,6 +7,11 @@ export interface PreparedPdfTemplate {
   previousXref: number;
 }
 
+function pdfAsciiString(value: string): string {
+  if (!/^[\x21-\x7e]+$/.test(value)) throw new Error('Verification URL must be printable ASCII');
+  return `(${value.replace(/[\\()]/g, '\\$&')})`;
+}
+
 function pdfString(value: string): string {
   let hex = 'feff';
   for (let index = 0; index < value.length; index++)
@@ -38,7 +43,7 @@ export function appendPdfContent(
     [contentId, `<< /Length ${content.length} >>\nstream\n${content}\nendstream`],
     [
       linkId,
-      `<< /Type /Annot /Subtype /Link /F 4 /Rect [543 20 738 72] /Border [0 0 0] /A << /S /URI /URI ${pdfString(verificationUrl)} >> >>`,
+      `<< /Type /Annot /Subtype /Link /F 4 /Rect [543 20 738 72] /Border [0 0 0] /A << /S /URI /URI ${pdfAsciiString(verificationUrl)} >> >>`,
     ],
     [
       infoId,
