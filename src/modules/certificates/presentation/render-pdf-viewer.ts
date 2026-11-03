@@ -1,5 +1,11 @@
-import type { VerifiedCertificate } from '../domain/certificate';
+import type { TemplateId, VerifiedCertificate } from '../domain/certificate';
 import { escapeHtml } from './render-certificate';
+
+const achievementLabels: Record<TemplateId, string> = {
+  'program-v1': 'Programa completado',
+  'talk-v1': 'Charla',
+  'training-v1': 'Capacitación',
+};
 
 export function renderPdfViewer(certificate: VerifiedCertificate, apiOrigin = ''): string {
   const { payload, hash } = certificate.record;
@@ -18,8 +24,7 @@ export function renderPdfViewer(certificate: VerifiedCertificate, apiOrigin = ''
     .filter((part) => ['day', 'month', 'year'].includes(part.type))
     .map((part) => part.value)
     .join(' ');
-  const achievement =
-    payload.templateId === 'talk-v1' ? 'Charla acreditada' : 'Programa completado';
+  const achievement = achievementLabels[payload.templateId];
   const shortHash = `${hash.slice(0, 12)}…${hash.slice(-8)}`;
   return `<!doctype html>
 <html lang="es">

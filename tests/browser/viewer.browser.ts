@@ -51,7 +51,11 @@ test('renders both complete PDFs without plugin controls or scrolling across dev
         expect(await page.locator('.person h2').textContent()).toBe(input.data.recipientName);
         expect(await page.locator('.course p').textContent()).toBe(input.data.courseName);
         expect(await page.locator('.course .label').textContent()).toBe(
-          templateId === 'talk-v1' ? 'Charla acreditada' : 'Programa completado',
+          {
+            'program-v1': 'Programa completado',
+            'talk-v1': 'Charla',
+            'training-v1': 'Capacitación',
+          }[templateId],
         );
         expect(await page.locator('.cta').getAttribute('href')).toBe('https://squai.io');
         expect(await page.locator('.cta').textContent()).toContain('Sigue aprendiendo');
