@@ -1,4 +1,4 @@
-export const templateIds = ['program-v1', 'talk-v1'] as const;
+export const templateIds = ['program-v1', 'talk-v1', 'training-v1'] as const;
 export type TemplateId = (typeof templateIds)[number];
 
 export interface Achievement {

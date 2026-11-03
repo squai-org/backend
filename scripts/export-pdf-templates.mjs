@@ -18,7 +18,7 @@ const browser = await chromium.launch({
 });
 try {
   const page = await browser.newPage();
-  for (const templateId of ['program-v1', 'talk-v1']) {
+  for (const templateId of ['program-v1', 'talk-v1', 'training-v1']) {
     const source = await readFile(
       `src/modules/certificates/presentation/templates/${templateId}.html`,
       'utf8',

@@ -27,7 +27,7 @@ En producción, emite en `https://api.squai.io/api/v1/certificates`, con `Author
 }
 ```
 
-`program-v1` acredita un programa; `talk-v1`, asistencia a una charla. `subjectId` es un UUID opaco y estable del destinatario; reutilízalo al reintentar. No uses un correo o número de identidad.
+`program-v1` acredita un programa; `training-v1` usa el mismo diseño que `program-v1`; `talk-v1`, asistencia a una charla. `subjectId` es un UUID opaco y estable del destinatario; reutilízalo al reintentar. No uses un correo o número de identidad.
 
 El cuerpo admite hasta 8 KiB, nombre hasta 80 puntos de código y curso hasta 100. El texto debe estar recortado y normalizado en NFC, sin controles ni caracteres de dirección prohibidos. La fecha debe ser real y tener formato `YYYY-MM-DD`. Propiedades y plantillas desconocidas se rechazan.
 

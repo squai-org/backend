@@ -4,7 +4,9 @@ import { Miniflare } from 'miniflare';
 import { createKeys, issuer, publicOrigin } from './fixtures';
 
 export const token = 'integration-test-issuance-token-32-characters';
-export const schema = await readFile('migrations/0001_certificates.sql', 'utf8');
+export const schema = (await readFile('migrations/0002_training_template.sql', 'utf8'))
+  .replace(/^ALTER[^;]*;\s*/, '')
+  .replace(/INSERT INTO[\s\S]*?DROP TABLE certificates_old;\s*/, '');
 
 export async function createTestRuntime(apiOrigin?: string) {
   const keys = await createKeys();

@@ -22,7 +22,7 @@ test('renders both complete PDFs without plugin controls or scrolling across dev
   });
   try {
     const base = (await runtime.ready).origin;
-    for (const templateId of ['program-v1', 'talk-v1']) {
+    for (const templateId of ['program-v1', 'talk-v1', 'training-v1']) {
       const issued = await runtime.dispatchFetch(`${base}/api/v1/certificates`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -51,7 +51,7 @@ test('renders both complete PDFs without plugin controls or scrolling across dev
         expect(await page.locator('.person h2').textContent()).toBe(input.data.recipientName);
         expect(await page.locator('.course p').textContent()).toBe(input.data.courseName);
         expect(await page.locator('.course .label').textContent()).toBe(
-          templateId === 'program-v1' ? 'Programa completado' : 'Charla acreditada',
+          templateId === 'talk-v1' ? 'Charla acreditada' : 'Programa completado',
         );
         expect(await page.locator('.cta').getAttribute('href')).toBe('https://squai.io');
         expect(await page.locator('.cta').textContent()).toContain('Sigue aprendiendo');
