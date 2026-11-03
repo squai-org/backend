@@ -80,6 +80,17 @@ test.each(['program-v1', 'talk-v1', 'training-v1'] as const)(
   },
 );
 
+test('PDF link rejects non-ASCII URLs and escapes PDF string delimiters', async () => {
+  const target = structuredClone(certificate);
+  target.verificationUrl = 'https://squai.io/verify/ñ';
+  await expect(renderCertificatePdf(target, loadAsset)).rejects.toThrow('printable ASCII');
+  target.verificationUrl = 'https://squai.io/verify/a(b)c\\d';
+  const bytes = await renderCertificatePdf(target, loadAsset);
+  expect(new TextDecoder('latin1').decode(bytes)).toContain(
+    '/URI (https://squai.io/verify/a\\(b\\)c\\\\d)',
+  );
+});
+
 test('PDF fits long names and course titles without changing signed text', async () => {
   const font = manifest.fonts.Heading;
   for (const value of [
