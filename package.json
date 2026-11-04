@@ -22,15 +22,15 @@
     "test:browser": "npm run build && vitest run --config vitest.browser.config.ts"
   },
   "dependencies": {
-    "hono": "4.13.14",
-    "jose": "6.2.13"
+    "hono": "4.13.16",
+    "jose": "6.2.14"
   },
   "devDependencies": {
-    "@babel/parser": "8.0.8",
-    "@biomejs/biome": "2.6.3",
-    "@cloudflare/workers-types": "5.20261025.1",
+    "@babel/parser": "8.0.10",
+    "@biomejs/biome": "2.6.4",
+    "@cloudflare/workers-types": "5.20261101.1",
     "@pdf-lib/fontkit": "1.1.1",
-    "@types/node": "26.6.5",
+    "@types/node": "26.6.6",
     "@vitest/coverage-v8": "5.0.5",
     "esbuild": "0.28.2",
     "miniflare": "5.20261019.2-beta",
@@ -39,6 +39,6 @@
     "playwright": "1.64.1",
     "typescript": "7.0.2",
     "vitest": "5.0.5",
-    "wrangler": "4.152.0"
+    "wrangler": "4.156.0"
   }
 }
