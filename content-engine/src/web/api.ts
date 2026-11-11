@@ -95,3 +95,11 @@ export async function upload(itemId: string, file: File): Promise<Item> {
   if (!response.ok) throw new Error(data.error ?? `Error ${response.status}`);
   return data;
 }
+
+export type InstagramConnection = {
+  configured: boolean;
+  redirectUri: string;
+  connected: boolean;
+  username: string | null;
+  expiresAt: number | null;
+};

@@ -14,6 +14,10 @@ export type Config = {
   igUserId: string;
   igAccessToken: string;
   igGraphUrl: string;
+  igAppId: string;
+  igAppSecret: string;
+  igAuthUrl: string;
+  igTokenUrl: string;
 };
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
@@ -37,5 +41,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     igUserId: env.IG_USER_ID ?? '',
     igAccessToken: env.IG_ACCESS_TOKEN ?? '',
     igGraphUrl: (env.IG_GRAPH_URL ?? 'https://graph.instagram.com').replace(/\/$/, ''),
+    igAppId: env.IG_APP_ID ?? '',
+    igAppSecret: env.IG_APP_SECRET ?? '',
+    igAuthUrl: env.IG_AUTH_URL ?? 'https://www.instagram.com/oauth/authorize',
+    igTokenUrl: env.IG_TOKEN_URL ?? 'https://api.instagram.com/oauth/access_token',
   };
 }

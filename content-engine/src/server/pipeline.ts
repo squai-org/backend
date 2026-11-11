@@ -1,4 +1,5 @@
 import { type Context, runJob } from './agents.ts';
+import { CONNECTION_KEY, type InstagramConnection, TOKEN_LIFETIME_MS } from './connections.ts';
 import type { Hook } from './db.ts';
 import type { Item } from './domain.ts';
 import { refreshToken } from './publisher.ts';
@@ -77,17 +78,23 @@ export function fireWeeklyHooks(ctx: Context, now = new Date()): void {
   }
 }
 
+export function savedConnection(ctx: Context): InstagramConnection | null {
+  return ctx.store.getSetting<InstagramConnection | null>(CONNECTION_KEY, null);
+}
+
 export function instagramAccount(ctx: Context) {
+  const saved = savedConnection(ctx);
   return {
     graphUrl: ctx.config.igGraphUrl,
-    userId: ctx.config.igUserId,
-    token: ctx.store.getSetting('ig_token', ctx.config.igAccessToken),
+    userId: saved?.userId ?? ctx.config.igUserId,
+    token: saved?.token ?? ctx.config.igAccessToken,
   };
 }
 
-export function instagramReady(ctx: Context): boolean {
-  const account = instagramAccount(ctx);
-  return Boolean(account.userId && account.token);
+export function instagramReady(ctx: Context, now = Date.now()): boolean {
+  const saved = savedConnection(ctx);
+  if (saved) return saved.expiresAt > now;
+  return Boolean(ctx.config.igUserId && ctx.config.igAccessToken);
 }
 
 export async function publishDue(ctx: Context, now = new Date()): Promise<void> {
@@ -121,12 +128,17 @@ export async function publishDue(ctx: Context, now = new Date()): Promise<void> 
 }
 
 export async function refreshInstagramToken(ctx: Context, now = new Date()): Promise<void> {
-  if (!instagramReady(ctx)) return;
-  const last = ctx.store.getSetting('ig_token_refreshed_at', 0);
-  if (now.getTime() - last < TOKEN_REFRESH_MS) return;
-  ctx.store.setSetting('ig_token_refreshed_at', now.getTime());
+  const saved = savedConnection(ctx);
+  if (!saved || saved.expiresAt <= now.getTime()) return;
+  if (now.getTime() - saved.refreshedAt < TOKEN_REFRESH_MS) return;
   try {
-    ctx.store.setSetting('ig_token', await refreshToken(instagramAccount(ctx)));
+    const token = await refreshToken(instagramAccount(ctx));
+    ctx.store.setSetting(CONNECTION_KEY, {
+      ...saved,
+      token,
+      refreshedAt: now.getTime(),
+      expiresAt: now.getTime() + TOKEN_LIFETIME_MS,
+    });
   } catch (error) {
     console.error(message(error));
   }

@@ -1,15 +1,18 @@
-import { createHash, timingSafeEqual } from 'node:crypto';
+import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { extname, join, normalize, resolve } from 'node:path';
 import { type Context as Request, Hono } from 'hono';
 import { deleteCookie, getSignedCookie, setSignedCookie } from 'hono/cookie';
 import type { Context } from './agents.ts';
 import type { ItemPatch } from './db.ts';
+import { appConfigured, authorizeUrl, callbackUrl, CONNECTION_KEY, completeConnection } from './connections.ts';
 import { ACTIONS, type Action, canHumanMove, isFormat, isStatus } from './domain.ts';
-import { dispatchStatusHooks, fireHook, instagramReady } from './pipeline.ts';
+import { dispatchStatusHooks, fireHook, instagramReady, savedConnection } from './pipeline.ts';
 import { isKind } from './workspace.ts';
 
 const COOKIE = 'ce_session';
+const STATE_COOKIE = 'ce_oauth';
+const STATE_SECONDS = 600;
 const SESSION_SECONDS = 30 * 24 * 60 * 60;
 const UPLOAD_EXTENSIONS = ['.jpg', '.jpeg', '.mp4', '.mov'];
 const TYPES: Record<string, string> = {
@@ -40,7 +43,7 @@ function sendFile(c: Request, root: string, relative: string): Response | null {
   });
 }
 
-export function createApp(ctx: Context): Hono {
+export function createApp(ctx: Context, fetchImpl: typeof fetch = fetch): Hono {
   const { config, store, workspace } = ctx;
   const app = new Hono();
   const secure = config.publicUrl.startsWith('https://');
@@ -81,6 +84,57 @@ export function createApp(ctx: Context): Hono {
       taxonomy: store.getTaxonomy(),
     }),
   );
+
+  function connectionInfo() {
+    const saved = savedConnection(ctx);
+    return {
+      configured: appConfigured(config),
+      redirectUri: callbackUrl(config),
+      connected: instagramReady(ctx),
+      username: saved?.username ?? null,
+      expiresAt: saved?.expiresAt ?? null,
+    };
+  }
+
+  app.get('/api/connections', (c) => c.json({ instagram: connectionInfo() }));
+
+  app.post('/api/connections/instagram/start', async (c) => {
+    if (!appConfigured(config)) {
+      return c.json({ error: 'Falta IG_APP_ID o IG_APP_SECRET en el servidor.' }, 400);
+    }
+    const state = randomBytes(24).toString('hex');
+    await setSignedCookie(c, STATE_COOKIE, state, config.sessionSecret, {
+      httpOnly: true,
+      sameSite: 'Lax',
+      secure,
+      path: '/',
+      maxAge: STATE_SECONDS,
+    });
+    return c.json({ url: authorizeUrl(config, state) });
+  });
+
+  app.get('/api/connections/instagram/callback', async (c) => {
+    const expected = await getSignedCookie(c, config.sessionSecret, STATE_COOKIE);
+    deleteCookie(c, STATE_COOKIE, { path: '/' });
+    const fail = (reason: string) => c.redirect(`/?conexion=error&motivo=${encodeURIComponent(reason)}`);
+    const denied = c.req.query('error_description') ?? c.req.query('error');
+    if (denied) return fail(denied);
+    const code = c.req.query('code');
+    if (!expected || c.req.query('state') !== expected || !code) {
+      return fail('La autorización no es válida o expiró. Intenta de nuevo.');
+    }
+    try {
+      store.setSetting(CONNECTION_KEY, await completeConnection(config, code, fetchImpl));
+    } catch (error) {
+      return fail((error as Error).message);
+    }
+    return c.redirect('/?conexion=ok');
+  });
+
+  app.delete('/api/connections/instagram', (c) => {
+    store.setSetting(CONNECTION_KEY, null);
+    return c.json({ ok: true });
+  });
 
   app.put('/api/taxonomy', async (c) => {
     const body = (await c.req.json()) as Record<string, unknown>;

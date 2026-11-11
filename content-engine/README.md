@@ -25,6 +25,14 @@ npm run build
 npm start
 ```
 
+## Conectar Instagram
+
+1. Crea una app en developers.facebook.com y agrega el producto API de Instagram con inicio de sesión de Instagram.
+2. En la configuración del producto, pega la URL de redirección que muestra la sección Conexiones.
+3. Agrega la cuenta como probador de la app y acepta la invitación desde Instagram.
+4. Define `IG_APP_ID` e `IG_APP_SECRET` y reinicia.
+5. En Conexiones, pulsa Conectar. El token se guarda y se renueva solo.
+
 ## Variables
 
 | Variable | Uso |
@@ -35,8 +43,8 @@ npm start
 | `TIMEZONE` | Zona horaria de los hooks semanales. |
 | `CLAUDE_BIN` | Ruta de Claude Code. |
 | `CHROMIUM_PATH` | Ruta de Chromium. |
-| `IG_USER_ID` | Id de la cuenta de Instagram. |
-| `IG_ACCESS_TOKEN` | Token de larga duración. Se renueva solo. |
+| `IG_APP_ID` | Id de la app de Meta. |
+| `IG_APP_SECRET` | Secreto de la app de Meta. |
 
 ## Estructura
 

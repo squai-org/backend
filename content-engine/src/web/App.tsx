@@ -1,12 +1,13 @@
 import { type FormEvent, useCallback, useEffect, useState } from 'react';
 import { type AppStatus, api, type Item, Unauthorized } from './api.ts';
 import { Automation } from './views/Automation.tsx';
+import { Connections } from './views/Connections.tsx';
 import { Calendar } from './views/Calendar.tsx';
 import { Files } from './views/Files.tsx';
 import { Inspector } from './views/Inspector.tsx';
 import { Review } from './views/Review.tsx';
 
-type View = 'calendario' | 'revision' | 'bases' | 'templates' | 'skills' | 'agents' | 'automatizacion';
+type View = 'calendario' | 'revision' | 'bases' | 'templates' | 'skills' | 'agents' | 'conexiones' | 'automatizacion';
 export type Draft = { scheduled_at: string | null };
 
 const NAV: { group: string; entries: { id: View; label: string }[] }[] = [
@@ -29,6 +30,7 @@ const NAV: { group: string; entries: { id: View; label: string }[] }[] = [
     entries: [
       { id: 'skills', label: 'Skills' },
       { id: 'agents', label: 'Agentes' },
+      { id: 'conexiones', label: 'Conexiones' },
       { id: 'automatizacion', label: 'Automatización' },
     ],
   },
@@ -67,7 +69,9 @@ function Login({ onDone }: { onDone: () => void }) {
 export function App() {
   const [status, setStatus] = useState<AppStatus | null>(null);
   const [locked, setLocked] = useState(false);
-  const [view, setView] = useState<View>('calendario');
+  const returned = new URLSearchParams(window.location.search);
+  const [view, setView] = useState<View>(returned.has('conexion') ? 'conexiones' : 'calendario');
+  const [notice] = useState(returned.get('conexion') === 'error' ? (returned.get('motivo') ?? '') : '');
   const [items, setItems] = useState<Item[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
   const [draft, setDraft] = useState<Draft | null>(null);
@@ -93,6 +97,7 @@ export function App() {
 
   useEffect(() => {
     boot();
+    if (window.location.search) window.history.replaceState(null, '', '/');
   }, [boot]);
 
   useEffect(() => {
@@ -158,6 +163,7 @@ export function App() {
         {view === 'templates' && <Files kind="templates" title="Templates" extension=".html" />}
         {view === 'skills' && <Files kind="skills" title="Skills" extension="" />}
         {view === 'agents' && <Files kind="agents" title="Agentes" extension=".md" />}
+        {view === 'conexiones' && <Connections notice={notice} onChanged={boot} />}
         {view === 'automatizacion' && <Automation status={status} onTaxonomy={boot} />}
       </main>
       {inspecting && (
